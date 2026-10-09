@@ -6,11 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from telethon import TelegramClient, events
 
-# ТЕЛЕГРАМ API
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 
-# ОФІЦІЙНІ ТА МОНІТОРИНГОВІ КАНАЛИ (ВІЙСЬКОВА БЕЗПЕКА + ЕНЕРГЕТИКА)
 ALL_CHANNELS = [
     'vanek_nikolaev', 'monitor_radar', 'war_monitor', 
     'kpszs', 'dtek_ua', 'ukrenergo_official', 'kharkivoblenergo'
@@ -18,15 +16,38 @@ ALL_CHANNELS = [
 
 EXCLUDE_WORDS = ['куплю', 'продам', 'робота', 'вакансія', 'реклама', 'підписуйтесь']
 
-# СТРУКТУРА ДЛЯ ВСІХ РЕГІОНІВ ТА ОФІЦІЙНИХ ДАНИХ ПРО СВІТЛО
+# ДЕТАЛЬНІ ДАНІ ПО СВІТЛУ ТА АДРЕСАХ (ПЕРШОДЖЕРЕЛА)
 live_state = {
     "locations": {
-        "lozova": { "title": "📍 Лозова / Харківщина", "code": "green", "codeText": "ТИША", "detail": "Моніторинг регіону активний...", "outages": "⚪ Очікування даних від Харківобленерго" },
-        "kyiv": { "title": "📍 Київ та область", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Очікування даних від ДТЕК" },
-        "dnipro": { "title": "📍 Дніпро / Запоріжжя", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Штатний режим" },
-        "odesa": { "title": "📍 Одеса та область", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Штатний режим" },
-        "lviv": { "title": "📍 Львів / Захід", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Штатний режим" },
-        "kharkiv": { "title": "📍 Харків", "code": "green", "codeText": "ТИША", "detail": "Моніторинг небезпеки...", "outages": "⚪ Екстрені / аварійні" }
+        "kharkiv": { 
+            "title": "Харківська область / Харків", 
+            "code": "green", "codeText": "ТИША", 
+            "air_detail": "Повітряний простір контролюється.", 
+            "outages_status": "Діють погодинні графіки відключень",
+            "streets": ["Центр", "Салтівка", "Олексіївка", "Холодна Гора"]
+        },
+        "lozova": { 
+            "title": "Лозова та Лозівська громада", 
+            "code": "green", "codeText": "ТИША", 
+            "air_detail": "Штатний режим погрози з повітря відсутні.", 
+            "outages_status": "Без відключень (станом на 09.10.2026)",
+            "streets": [
+                "4-й мікрорайон (4 МКРН)", 
+                "1-й мікрорайон", 
+                "3-й мікрорайон", 
+                "мікрорайон Південний", 
+                "вул. Лозовського", 
+                "вул. Соборна", 
+                "Центр"
+            ]
+        },
+        "kyiv": { 
+            "title": "Київ та область", 
+            "code": "green", "codeText": "ТИША", 
+            "air_detail": "Небо чисте.", 
+            "outages_status": "ДТЕК: стабілізаційні обмеження за графіком",
+            "streets": ["Хрещатик", "Печерськ", "Подол", "Оболонь"]
+        }
     },
     "radar": []
 }
@@ -44,7 +65,7 @@ app.add_middleware(
 async def get_status():
     return live_state
 
-client = TelegramClient('varta_ukraine_session', API_ID, API_HASH)
+client = TelegramClient('varta_ukraine_session_v3', API_ID, API_HASH)
 
 @client.on(events.NewMessage(chats=ALL_CHANNELS))
 async def handle_incoming_feed(event):
@@ -55,59 +76,32 @@ async def handle_incoming_feed(event):
         return
 
     clean_text = event.raw_text.strip()
+    is_outage_news = any(w in text for w in ['світл', 'відключ', 'графік', 'обленерго', 'укренерго', 'обмежен'])
     
-    # 1. Обробка тривог та військових загроз
     code = "green"
     code_text = "ТИША"
     cls = "code-green-tag"
 
-    if any(w in text for w in ['ракет', 'балістик', 'шахед', 'увага', 'зліт міг']):
-        code = "red"
-        code_text = "ТРИВОГА"
-        cls = "code-red-tag"
-    elif any(w in text for w in ['активність', 'розвідка', 'нвру', 'курсу']):
-        code = "yellow"
-        code_text = "УВАГА"
-        cls = "code-yellow-tag"
+    if not is_outage_news:
+        if any(w in text for w in ['ракет', 'балістик', 'шахед', 'бпла', 'дрон', 'увага', 'зліт міг']):
+            code = "red"
+            code_text = "ТРЕВОГА"
+            cls = "code-red-tag"
 
-    # 2. Обробка інформації про світло / графіки відключень
-    outages_info = None
-    if any(w in text for w in ['світл', 'відключ', 'графік', 'обленерго', 'укренерго', 'обмежен']):
-        if any(w in text for w in ['скасов', 'не діють', 'відмінили', 'без відключень', 'розпорядження скасовано']):
-            outages_info = "🟢 Графіки скасовані / світло є"
-        elif any(w in text for w in ['екстрені', 'аварійні', 'погодинні', 'обмеження']):
-            outages_info = clean_text[:110] + "..."
+    target_key = "lozova" if ('лозов' in text or 'харків' in text) else ("kyiv" if 'київ' in text else None)
+
+    if target_key and target_key in live_state["locations"]:
+        if is_outage_news:
+            live_state["locations"][target_key]["outages_status"] = f"[@{channel_username}]: {clean_text[:140]}..."
         else:
-            outages_info = clean_text[:110] + "..."
+            if code != "green":
+                live_state["locations"][target_key]["code"] = code
+                live_state["locations"][target_key]["codeText"] = code_text
+                live_state["locations"][target_key]["air_detail"] = f"[@{channel_username}]: {clean_text[:140]}..."
 
-    # Розподіляємо по регіонах
-    target_key = "lozova"
-    if any(w in text for w in ['київ', 'київськ', 'dtek']): target_key = "kyiv"
-    elif any(w in text for w in ['дніпр', 'запоріж']): target_key = "dnipro"
-    elif any(w in text for w in ['одес']): target_key = "odesa"
-    elif any(w in text for w in ['львів']): target_key = "lviv"
-    elif any(w in text for w in ['харків', 'харківськ', 'обленерго']): target_key = "kharkiv"
-
-    # Якщо новина загальноукраїнська від Укренерго — оновлюємо статус для всіх регіонів або для головного
-    if 'укренерго' in channel_username or 'укренерго' in text:
-        for k in live_state["locations"]:
-            if outages_info:
-                live_state["locations"][k]["outages"] = outages_info
-
-    # Оновлюємо конкретний регіон
-    if target_key in live_state["locations"]:
-        if code != "green":
-            live_state["locations"][target_key]["code"] = code
-            live_state["locations"][target_key]["codeText"] = code_text
-            live_state["locations"][target_key]["detail"] = f"[@{channel_username}]: {clean_text[:150]}..."
-        
-        if outages_info:
-            live_state["locations"][target_key]["outages"] = outages_info
-
-    # Загальний радар загроз
-    if code != "green":
+    if not is_outage_news and code != "green":
         live_state["radar"].insert(0, {
-            "title": f"📍 Регіон: {target_key.upper()} (@{channel_username})",
+            "title": f"📍 Загроза",
             "route": clean_text[:120] + "...",
             "tag": code_text,
             "cls": cls
