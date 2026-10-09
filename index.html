@@ -174,4 +174,360 @@
         }
 
         .radar-info {
-            display:
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .radar-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-act {
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-down { background: var(--accent-green); color: #000; }
+        .btn-hit { background: var(--accent-red); color: #fff; }
+
+        .chat-box {
+            display: flex;
+            flex-direction: column;
+            height: 350px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .chat-msg {
+            background: var(--bg-card);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .chat-user {
+            font-weight: bold;
+            color: var(--accent-blue);
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+        }
+
+        .quick-replies {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .chip {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 10px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .forum-categories {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .post {
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-sub);
+            font-size: 0.7rem;
+            text-decoration: none;
+            cursor: pointer;
+            width: 25%;
+        }
+
+        .nav-item.active {
+            color: var(--accent-red);
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved"></i> ВАРТА & ТРЕШ <span style="font-size:0.7rem; color:var(--text-sub)">ХАРКІВ</span>
+        </div>
+        <div class="status-badge" id="global-status">
+            🚨 РАЙОНИ ПІД ЗАГРОЗОЮ
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        <!-- ВКЛАДКА 1: КАРТА ТА РАДАР -->
+        <div id="tab-map" class="tab-content active">
+            
+            <div class="banner-punch">
+                <div class="text" id="punchline">💥 ППО працює: «Гагарін долітався!»</div>
+                <i class="fa-solid fa-skull-crossbones"></i>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>Райони Харківської області</span>
+                    <span>Клацніть для зміни</span>
+                </div>
+                <div class="kharkiv-grid">
+                    <button class="district-btn danger" onclick="toggleDistrict(this, 'Харківський')">
+                        <span class="district-name">Харківський / Місто</span>
+                        <span class="district-status">⚠️ Загроза КАБ / С-300</span>
+                    </button>
+                    <button class="district-btn danger" onclick="toggleDistrict(this, 'Чугуївський')">
+                        <span class="district-name">Чугуївський</span>
+                        <span class="district-status">⚠️ Загроза БПЛА</span>
+                    </button>
+                    <button class="district-btn" onclick="toggleDistrict(this, 'Куп\'янський')">
+                        <span class="district-name">Куп'янський</span>
+                        <span class="district-status">🟢 Спокійно</span>
+                    </button>
+                    <button class="district-btn danger" onclick="toggleDistrict(this, 'Ізюмський')">
+                        <span class="district-name">Ізюмський</span>
+                        <span class="district-status">⚠️ Загроза Shahed</span>
+                    </button>
+                    <button class="district-btn" onclick="toggleDistrict(this, 'Богодухівський')">
+                        <span class="district-name">Богодухівський</span>
+                        <span class="district-status">🟢 Спокійно</span>
+                    </button>
+                    <button class="district-btn" onclick="toggleDistrict(this, 'Лозівський')">
+                        <span class="district-name">Лозівський</span>
+                        <span class="district-status">🟢 Спокійно</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Радар цілей у реальному часі</div>
+                <div class="radar-list" id="radar-list">
+                    <div class="radar-item">
+                        <div class="radar-info">
+                            <div class="radar-icon"><i class="fa-solid fa-plane"></i></div>
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold;">2x КАБ з Бєлгорода</div>
+                                <div style="font-size:0.7rem; color:var(--text-sub);">Курс: Дергачі / Харків</div>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-act btn-down" onclick="triggerAction('down', 'КАБ')">Збити</button>
+                            <button class="btn-act btn-hit" onclick="triggerAction('hit', 'КАБ')">Приліт</button>
+                        </div>
+                    </div>
+                    <div class="radar-item">
+                        <div class="radar-info">
+                            <div class="radar-icon"><i class="fa-solid fa-helicopter"></i></div>
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold;">БПЛА Shahed</div>
+                                <div style="font-size:0.7rem; color:var(--text-sub);">Чугуївський р-н -> Зміїв</div>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-act btn-down" onclick="triggerAction('down', 'Shahed')">Збити</button>
+                            <button class="btn-act btn-hit" onclick="triggerAction('hit', 'Shahed')">Приліт</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ВКЛАДКА 2: LIVE-ЧАТ -->
+        <div id="tab-chat" class="tab-content">
+            <div class="card chat-box">
+                <div class="card-title">Оперативний чат Харківщини</div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-msg">
+                        <div class="chat-user">Олексій (Салтівка)</div>
+                        На Північній чути гул, схоже на мопед!
+                    </div>
+                    <div class="chat-msg">
+                        <div class="chat-user">Дмитро (Чугуїв)</div>
+                        ППО працює по бляшанці, все норм!
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-replies">
+                <div class="chip" onclick="sendQuickMsg('🚀 Чути вибух / гул!')">🚀 Чути вибух</div>
+                <div class="chip" onclick="sendQuickMsg('💣 Пуск КАБ з Бєлгорода!')">💣 Пуск КАБ</div>
+                <div class="chip" onclick="sendQuickMsg('🛡️ Працює ППО!')">🛡️ Працює ППО</div>
+                <div class="chip" onclick="sendQuickMsg('🤬 Русня гній!')">🤬 Русня гній</div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА 3: ФОРУМ -->
+        <div id="tab-forum" class="tab-content">
+            <div class="forum-categories">
+                <div class="chip" style="background:var(--accent-blue); color:#fff">🪙 Коп / Скарби</div>
+                <div class="chip">🎣 Рибалка ХО</div>
+                <div class="chip">🚗 Авто Клуб</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Останні обговорення</div>
+                
+                <div class="post">
+                    <div class="post-header">
+                        <span>🪙 Пошук скарбів</span>
+                        <span>15 хв тому</span>
+                    </div>
+                    <div style="font-size:0.85rem; font-weight:bold; margin-bottom:4px;">Хто робив вихід у бік Печеніг цього тижня?</div>
+                    <div style="font-size:0.75rem; color:var(--text-sub);">Підкажіть по ґрунту, чи не сильно мокро після дощів?</div>
+                </div>
+
+                <div class="post">
+                    <div class="post-header">
+                        <span>🎣 Рибалка ХО</span>
+                        <span>1 год тому</span>
+                    </div>
+                    <div style="font-size:0.85rem; font-weight:bold; margin-bottom:4px;">Звіт з Краснопавлівського водосховища</div>
+                    <div style="font-size:0.75rem; color:var(--text-sub);">Взяв 3 судака на силікон. Кльов є!</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- НИЖНЯ НАВІГАЦІЯ -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('map', this)">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>Карта</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('chat', this)">
+            <i class="fa-solid fa-comments"></i>
+            <span>Чат</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('forum', this)">
+            <i class="fa-solid fa-users"></i>
+            <span>Форум</span>
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram?.WebApp;
+        if(tg) {
+            tg.expand();
+            tg.ready();
+        }
+
+        const downPunches = [
+            "💥 Гагарін долітався!",
+            "🔥 Мінус один бляшаний мопед!",
+            "🎯 ППО працює: тушка розібрана на гвинтики!",
+            "⚡ Збили! Руснявий хлам упав у буряки!"
+        ];
+
+        const hitPunches = [
+            "🤬 Русня — гній!",
+            "💣 Курви знову капостять...",
+            "⚠️ Фіксація влучання. Будьте в укриттях!"
+        ];
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            el.classList.add('active');
+        }
+
+        function toggleDistrict(btn, name) {
+            btn.classList.toggle('danger');
+            const statusEl = btn.querySelector('.district-status');
+            if(btn.classList.contains('danger')) {
+                statusEl.innerHTML = "⚠️ Загроза обстрілу";
+            } else {
+                statusEl.innerHTML = "🟢 Спокійно";
+            }
+        }
+
+        function triggerAction(type, target) {
+            const punchEl = document.getElementById('punchline');
+            if(type === 'down') {
+                const randomPunch = downPunches[Math.floor(Math.random() * downPunches.length)];
+                punchEl.innerHTML = randomPunch;
+                punchEl.parentElement.style.background = "linear-gradient(135deg, #15803d, #166534)";
+            } else {
+                const randomPunch = hitPunches[Math.floor(Math.random() * hitPunches.length)];
+                punchEl.innerHTML = randomPunch;
+                punchEl.parentElement.style.background = "linear-gradient(135deg, #991b1b, #7f1d1d)";
+            }
+        }
+
+        function sendQuickMsg(text) {
+            const chatBox = document.getElementById('chat-messages');
+            const newMsg = document.createElement('div');
+            newMsg.className = 'chat-msg';
+            newMsg.innerHTML = `<div class="chat-user">Ви</div>${text}`;
+            chatBox.appendChild(newMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
