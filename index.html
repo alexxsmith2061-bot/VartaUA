@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ВАРТА & ТРЕШ - LIVE MONITORING</title>
+    <title>ВАРТА & СВІТЛО - LIVE UKRAINE</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -25,23 +25,27 @@
         .logo-sub { font-size: 0.65rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
         .settings-btn { background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: #93c5fd; padding: 6px 12px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
         .main-content { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; padding-bottom: 75px; }
-        .audio-bar { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-green); color: #a7f3d0; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .audio-bar.off { background: rgba(239, 68, 68, 0.15); border-color: var(--accent-red); color: #fca5a5; }
-        .quick-locations { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; }
+        
+        .quick-locations { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
         .loc-chip { background: var(--bg-card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; color: var(--text-sub); cursor: pointer; }
         .loc-chip.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-        .live-banner { background: linear-gradient(135deg, #1e1b4b, #0f172a); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 12px; transition: all 0.3s ease; }
+        
+        .live-banner { background: linear-gradient(135deg, #1e1b4b, #0f172a); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 10px; transition: all 0.3s ease; }
         .live-banner.code-red { border-color: var(--accent-red); background: linear-gradient(135deg, #450a0a, #18181b); }
         .live-banner.code-yellow { border-color: var(--accent-yellow); background: linear-gradient(135deg, #451a03, #18181b); }
         .live-banner.code-green { border-color: var(--accent-green); background: linear-gradient(135deg, #064e3b, #18181b); }
+        
         .banner-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .banner-location { font-size: 0.9rem; font-weight: 800; color: #c7d2fe; }
         .banner-code { font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
         .code-red-tag { background: var(--accent-red); color: #fff; }
         .code-yellow-tag { background: var(--accent-yellow); color: #000; }
         .code-green-tag { background: var(--accent-green); color: #000; }
-        .banner-detail { font-size: 0.85rem; font-weight: 700; line-height: 1.35; }
-        .banner-time { font-size: 0.65rem; color: var(--text-sub); margin-top: 6px; }
+        .banner-detail { font-size: 0.82rem; font-weight: 700; line-height: 1.35; margin-bottom: 6px; }
+        
+        /* Блок світла / відключень */
+        .outages-card { background: rgba(245, 158, 11, 0.1); border: 1px solid var(--accent-yellow); border-radius: 8px; padding: 8px 10px; font-size: 0.75rem; font-weight: 700; color: #fde68a; margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+
         .card { background: var(--bg-secondary); border-radius: 12px; padding: 12px; border: 1px solid var(--border); margin-bottom: 12px; }
         .card-header { font-size: 0.78rem; font-weight: 800; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase; display: flex; justify-content: space-between; }
         .radar-list { display: flex; flex-direction: column; gap: 8px; }
@@ -50,9 +54,11 @@
         .radar-title { font-size: 0.85rem; font-weight: 700; }
         .radar-route { font-size: 0.72rem; color: var(--text-sub); margin-top: 2px; }
         .radar-empty { font-size: 0.78rem; color: var(--text-sub); text-align: center; padding: 10px; }
+        
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid var(--border); }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); font-size: 0.7rem; font-weight: 700; cursor: pointer; width: 33%; }
         .nav-item.active { color: var(--accent-red); }
+        
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 9999; }
         .modal-card { background: var(--bg-secondary); border: 1px solid var(--accent-blue); border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; text-align: center; }
         .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
@@ -60,7 +66,7 @@
         .select-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left; }
         .select-label { font-size: 0.75rem; font-weight: 700; color: var(--accent-blue); }
         .custom-select { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; width: 100%; }
-        .start-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; border: none; padding: 14px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; width: 100%; cursor: pointer; -webkit-appearance: none; }
+        .start-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; border: none; padding: 14px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; width: 100%; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -68,55 +74,60 @@
     <div class="modal-overlay" id="setup-modal">
         <div class="modal-card">
             <div class="modal-title">🛡️ Налаштування Варти</div>
-            <div class="modal-desc">Оберіть ваш основний населений пункт для моніторингу:</div>
+            <div class="modal-desc">Оберіть ваш базовий регіон моніторингу:</div>
             <div class="select-group">
-                <div class="select-label">Громада:</div>
+                <div class="select-label">Регіон:</div>
                 <select class="custom-select" id="user-location-select">
-                    <option value="lozova">📍 Лозівська громада / Лозова</option>
-                    <option value="blyzniuky">📍 Близнюківська громада</option>
-                    <option value="barvinkove">📍 Барвінківська громада</option>
-                    <option value="izium">📍 Ізюмський район</option>
+                    <option value="lozova">📍 Лозова / Харківщина</option>
+                    <option value="kharkiv">📍 Харків</option>
+                    <option value="kyiv">📍 Київ та область</option>
+                    <option value="dnipro">📍 Дніпро / Запоріжжя</option>
+                    <option value="odesa">📍 Одеса та область</option>
+                    <option value="lviv">📍 Львів / Захід</option>
                 </select>
             </div>
-            <button class="start-btn" id="start-varta-btn">🔔 УВІМКНУТИ ВАРТУ</button>
+            <button class="start-btn" id="start-varta-btn">🔔 УВІМКНУТИ МОНІТОРИНГ</button>
         </div>
     </div>
 
     <div class="header">
         <div>
-            <div class="logo-title">🛡️ ВАРТА & ТРЕШ</div>
-            <div class="logo-sub">Лозова & Південь Харківщини</div>
+            <div class="logo-title">🛡️ ВАРТА & СВІТЛО</div>
+            <div class="logo-sub">Моніторинг України наживо</div>
         </div>
-        <button class="settings-btn" id="settings-open-btn">⚙️ Змінити</button>
+        <button class="settings-btn" id="settings-open-btn">⚙️ Регіон</button>
     </div>
 
     <div class="main-content">
-        <div class="audio-bar" id="audio-bar">
-            <span>🔔 Голосова варта та сирена</span>
-            <span id="audio-status-text">АКТИВНО</span>
-        </div>
-
+        <!-- Кнопки вибору міст/регіонів України -->
         <div class="quick-locations">
             <div class="loc-chip active" id="chip-lozova" data-loc="lozova">📍 Лозова</div>
-            <div class="loc-chip" id="chip-blyzniuky" data-loc="blyzniuky">📍 Близнюки</div>
-            <div class="loc-chip" id="chip-barvinkove" data-loc="barvinkove">📍 Барвінкове</div>
-            <div class="loc-chip" id="chip-izium" data-loc="izium">📍 Ізюм</div>
+            <div class="loc-chip" id="chip-kharkiv" data-loc="kharkiv">📍 Харків</div>
+            <div class="loc-chip" id="chip-kyiv" data-loc="kyiv">📍 Київ</div>
+            <div class="loc-chip" id="chip-dnipro" data-loc="dnipro">📍 Дніпро</div>
+            <div class="loc-chip" id="chip-odesa" data-loc="odesa">📍 Одеса</div>
+            <div class="loc-chip" id="chip-lviv" data-loc="lviv">📍 Львів</div>
         </div>
 
+        <!-- Головний банер статусу регіону -->
         <div id="live-banner" class="live-banner code-green">
             <div class="banner-top">
-                <div class="banner-location" id="banner-title">📍 Лозівський район / Лозова</div>
-                <div class="banner-code code-green-tag" id="banner-tag">СИНХРОНІЗАЦІЯ</div>
+                <div class="banner-location" id="banner-title">📍 Лозова / Харківщина</div>
+                <div class="banner-code code-green-tag" id="banner-tag">ТИША</div>
             </div>
             <div class="banner-detail" id="banner-detail">
-                📡 Отримуємо актуальні дані з моніторингових джерел...
+                📡 Очікування даних з моніторингових джерел...
             </div>
-            <div class="banner-time" id="banner-time">Оновлення: кожні 4с</div>
+            <!-- Блок світла -->
+            <div class="outages-card" id="outages-box">
+                ⚡ Світло: <span id="outages-text">⚪ Очікування даних від обленерго</span>
+            </div>
+            <div class="banner-time" id="banner-time" style="font-size: 0.65rem; color: var(--text-sub); margin-top: 6px;">Оновлення: Live 4с</div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <span>📡 Оперативний радар цілей</span>
+                <span>📡 Загальноукраїнський оперативний радар</span>
                 <span style="font-size: 0.65rem; color: var(--accent-green);">Live (4s)</span>
             </div>
             <div class="radar-list" id="radar-list">
@@ -126,109 +137,17 @@
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active"><span style="font-size:1.1rem;">🗺️</span><span>Карта</span></div>
-        <div class="nav-item"><span style="font-size:1.1rem;">💬</span><span>Чат</span></div>
-        <div class="nav-item"><span style="font-size:1.1rem;">🌐</span><span>Форум</span></div>
+        <div class="nav-item active"><span style="font-size:1.1rem;">🗺️</span><span>Монітор</span></div>
+        <div class="nav-item"><span style="font-size:1.1rem;">⚡</span><span>Світло</span></div>
+        <div class="nav-item"><span style="font-size:1.1rem;">💬</span><span>Зведення</span></div>
     </div>
 
     <script>
         let currentLocKey = 'lozova';
-        let previousCode = null;
-        let soundEnabled = true;
-
-        let liveData = {
-            'lozova': { title: '📍 Лозівська громада / Лозова', code: 'green', codeText: 'ТИША', detail: 'Очікування зведення з джерел...' },
-            'blyzniuky': { title: '📍 Близнюківська громада', code: 'green', codeText: 'ТИША', detail: 'Очікування зведення...' },
-            'barvinkove': { title: '📍 Барвінківська громада', code: 'green', codeText: 'ТИША', detail: 'Очікування зведення...' },
-            'izium': { title: '📍 Ізюмський район', code: 'green', codeText: 'ТИША', detail: 'Очікування зведення...' }
-        };
+        let liveData = {};
         let activeRadar = [];
 
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx = null;
-
-        function initAudioContext() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        function toggleAudio() {
-            soundEnabled = !soundEnabled;
-            const bar = document.getElementById('audio-bar');
-            const txt = document.getElementById('audio-status-text');
-            if (soundEnabled) {
-                bar.className = 'audio-bar';
-                txt.innerText = 'АКТИВНО';
-                initAudioContext();
-            } else {
-                bar.className = 'audio-bar off';
-                txt.innerText = 'ВИМКНЕНО';
-            }
-        }
-
-        function playSirenSound() {
-            if (!soundEnabled) return;
-            initAudioContext();
-            if (!audioCtx) return;
-
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-
-            osc.type = 'sawtooth';
-            const now = audioCtx.currentTime;
-
-            osc.frequency.setValueAtTime(140, now);
-            osc.frequency.linearRampToValueAtTime(320, now + 1.8);
-            osc.frequency.linearRampToValueAtTime(140, now + 3.5);
-
-            gain.gain.setValueAtTime(0.25, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 3.7);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            osc.start(now);
-            osc.stop(now + 3.7);
-        }
-
-        function speakAlert(text) {
-            if (!soundEnabled) return;
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'uk-UA';
-                utterance.rate = 0.92;
-                utterance.pitch = 0.75; 
-
-                const voices = window.speechSynthesis.getVoices();
-                const ukVoice = voices.find(v => v.lang.includes('uk') && !v.name.toLowerCase().includes('female'));
-                if (ukVoice) utterance.voice = ukVoice;
-
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        function triggerVoiceAnnouncement(newCode, isBallistics = false) {
-            if (previousCode === newCode) return;
-
-            if (newCode === 'red') {
-                playSirenSound();
-                setTimeout(() => {
-                    if (isBallistics) {
-                        speakAlert("Увага! Громадяни, ракетна небезпека! Балістика! Негайно в укриття!");
-                    } else {
-                        speakAlert("Увага! Громадяни, повітряна тривога! Перебувайте в укритті!");
-                    }
-                }, 2000);
-            } else if (newCode === 'green' && previousCode === 'red') {
-                speakAlert("Увага! Відбій повітряної тривоги. Будьте обережні.");
-            }
-
-            previousCode = newCode;
-        }
-
         function confirmSetup() {
-            initAudioContext();
             const selectEl = document.getElementById('user-location-select');
             if (selectEl) {
                 const selectedLoc = selectEl.value;
@@ -249,9 +168,12 @@
         }
 
         function renderBanner() {
-            const data = liveData[currentLocKey] || liveData['lozova'];
+            if (!liveData[currentLocKey]) return;
+            const data = liveData[currentLocKey];
+            
             document.getElementById('banner-title').innerHTML = data.title;
             document.getElementById('banner-detail').innerHTML = data.detail;
+            document.getElementById('outages-text').innerHTML = data.outages || '⚪ Штатний режим';
 
             const banner = document.getElementById('live-banner');
             const tag = document.getElementById('banner-tag');
@@ -272,16 +194,13 @@
 
             const now = new Date();
             document.getElementById('banner-time').innerHTML = `Оновлено: ${now.toLocaleTimeString()} • Live 4с`;
-
-            const isBallistic = data.detail.toLowerCase().includes('баліст') || data.detail.toLowerCase().includes('ракет');
-            triggerVoiceAnnouncement(data.code, isBallistic);
         }
 
         function renderRadar() {
             const list = document.getElementById('radar-list');
             list.innerHTML = '';
             if (!activeRadar || activeRadar.length === 0) {
-                list.innerHTML = '<div class="radar-empty">Наразі активних цілей у повітряному просторі немає.</div>';
+                list.innerHTML = '<div class="radar-empty">Наразі активних загроз у повітряному просторі немає.</div>';
                 return;
             }
             activeRadar.forEach(item => {
@@ -321,7 +240,6 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Прив'язка подій через JS для надійності в Telegram WebApp
             const startBtn = document.getElementById('start-varta-btn');
             if (startBtn) {
                 startBtn.addEventListener('click', confirmSetup);
@@ -332,11 +250,6 @@
             if (settingsBtn) {
                 settingsBtn.addEventListener('click', openSetupModal);
                 settingsBtn.addEventListener('touchend', (e) => { e.preventDefault(); openSetupModal(); });
-            }
-
-            const audioBar = document.getElementById('audio-bar');
-            if (audioBar) {
-                audioBar.addEventListener('click', toggleAudio);
             }
 
             document.querySelectorAll('.loc-chip').forEach(chip => {
@@ -351,9 +264,10 @@
             } else {
                 const modal = document.getElementById('setup-modal');
                 if (modal) modal.style.display = 'none';
-                selectLoc(savedLoc);
+                currentLocKey = savedLoc;
             }
-            renderRadar();
+            
+            fetchLiveAlerts();
             setInterval(fetchLiveAlerts, 4000);
         });
     </script>
