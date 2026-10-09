@@ -1,37 +1,32 @@
 import os
 import re
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from telethon import TelegramClient, events
 
-# ТЕЛЕГРАМ API (Береться автоматично з налаштувань Render)
+# ТЕЛЕГРАМ API
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 
-# БІЛИЙ СПИСОК КАНАЛІВ МОНІТОРИНГУ
-OFFICIAL_CHANNELS = ['kpszs', 'synegubov', 'kharkivoda']
-RADAR_CHANNELS = ['vanek_nikolaev', 'radar_raket', 'monitorkarta']
-LOCAL_CHANNELS = ['lozo_va', 'lozovaya_live', 'izium_live', 'barvinkove_news']
-ALL_CHANNELS = OFFICIAL_CHANNELS + RADAR_CHANNELS + LOCAL_CHANNELS
-
-LOCATIONS = {
-    'lozova': ['лозов', 'лозовая', 'авіловка', 'панютине'],
-    'blyzniuky': ['близнюк', 'близнюки'],
-    'barvinkove': ['барвінк', 'барвенково'],
-    'izium': ['ізюм', 'изюм']
-}
+# ОФІЦІЙНІ ТА МОНІТОРИНГОВІ КАНАЛИ (ВІЙСЬКОВА БЕЗПЕКА + ЕНЕРГЕТИКА)
+ALL_CHANNELS = [
+    'vanek_nikolaev', 'monitor_radar', 'war_monitor', 
+    'kpszs', 'dtek_ua', 'ukrenergo_official', 'kharkivoblenergo'
+]
 
 EXCLUDE_WORDS = ['куплю', 'продам', 'робота', 'вакансія', 'реклама', 'підписуйтесь']
-msg_history = []
 
+# СТРУКТУРА ДЛЯ ВСІХ РЕГІОНІВ ТА ОФІЦІЙНИХ ДАНИХ ПРО СВІТЛО
 live_state = {
     "locations": {
-        "lozova": {"title": "📍 Лозівська громада / Лозова", "code": "green", "codeText": "ТИША", "detail": "🟢 У повітряному просторі чисто. Моніторимо джерела."},
-        "blyzniuky": {"title": "📍 Близнюківська громада", "code": "green", "codeText": "ТИША", "detail": "🟢 Загрози не зафіксовано."},
-        "barvinkove": {"title": "📍 Барвінківська громада", "code": "green", "codeText": "ТИША", "detail": "🟢 Спокійно."},
-        "izium": {"title": "📍 Ізюмський район", "code": "green", "codeText": "ТИША", "detail": "🟢 Штатна ситуація."}
+        "lozova": { "title": "📍 Лозова / Харківщина", "code": "green", "codeText": "ТИША", "detail": "Моніторинг регіону активний...", "outages": "⚪ Очікування даних від Харківобленерго" },
+        "kyiv": { "title": "📍 Київ та область", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Очікування даних від ДТЕК" },
+        "dnipro": { "title": "📍 Дніпро / Запоріжжя", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Штатний режим" },
+        "odesa": { "title": "📍 Одеса та область", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Штатний режим" },
+        "lviv": { "title": "📍 Львів / Захід", "code": "green", "codeText": "ТИША", "detail": "Штатний режим.", "outages": "⚪ Штатний режим" },
+        "kharkiv": { "title": "📍 Харків", "code": "green", "codeText": "ТИША", "detail": "Моніторинг небезпеки...", "outages": "⚪ Екстрені / аварійні" }
     },
     "radar": []
 }
@@ -49,21 +44,7 @@ app.add_middleware(
 async def get_status():
     return live_state
 
-client = TelegramClient('varta_render_session', API_ID, API_HASH)
-
-def cross_validate_event(loc_key, raw_text, channel_username):
-    now = datetime.now()
-    global msg_history
-    msg_history = [m for m in msg_history if now - m['time'] < timedelta(minutes=10)]
-    msg_history.append({'channel': channel_username, 'loc': loc_key, 'text': raw_text.lower(), 'time': now})
-
-    matched_sources = set([m['channel'] for m in msg_history if m['loc'] == loc_key])
-    has_official = any(ch in OFFICIAL_CHANNELS or ch in RADAR_CHANNELS for ch in matched_sources)
-
-    if len(matched_sources) >= 2 or has_official:
-        return "red", "КОД ЧЕРВОНИЙ"
-    else:
-        return "yellow", "КОД ЖОВТИЙ"
+client = TelegramClient('varta_ukraine_session', API_ID, API_HASH)
 
 @client.on(events.NewMessage(chats=ALL_CHANNELS))
 async def handle_incoming_feed(event):
@@ -73,25 +54,65 @@ async def handle_incoming_feed(event):
     if any(bad in text for bad in EXCLUDE_WORDS):
         return
 
-    for loc_key, keywords in LOCATIONS.items():
-        if any(kw in text for kw in keywords):
-            clean_text = event.raw_text.strip()
-            code, code_text = cross_validate_event(loc_key, clean_text, channel_username)
+    clean_text = event.raw_text.strip()
+    
+    # 1. Обробка тривог та військових загроз
+    code = "green"
+    code_text = "ТИША"
+    cls = "code-green-tag"
 
-            live_state["locations"][loc_key] = {
-                "title": live_state["locations"][loc_key]["title"],
-                "code": code,
-                "codeText": code_text,
-                "detail": f"📡 <b>[{channel_username}]</b>: {clean_text}"
-            }
+    if any(w in text for w in ['ракет', 'балістик', 'шахед', 'увага', 'зліт міг']):
+        code = "red"
+        code_text = "ТРИВОГА"
+        cls = "code-red-tag"
+    elif any(w in text for w in ['активність', 'розвідка', 'нвру', 'курсу']):
+        code = "yellow"
+        code_text = "УВАГА"
+        cls = "code-yellow-tag"
 
-            live_state["radar"].insert(0, {
-                "title": f"📍 Зведення: {loc_key.upper()}",
-                "route": clean_text[:90] + "...",
-                "tag": code_text,
-                "cls": "code-red-tag" if code == "red" else "code-yellow-tag"
-            })
-            live_state["radar"] = live_state["radar"][:6]
+    # 2. Обробка інформації про світло / графіки відключень
+    outages_info = None
+    if any(w in text for w in ['світл', 'відключ', 'графік', 'обленерго', 'укренерго', 'обмежен']):
+        if any(w in text for w in ['скасов', 'не діють', 'відмінили', 'без відключень', 'розпорядження скасовано']):
+            outages_info = "🟢 Графіки скасовані / світло є"
+        elif any(w in text for w in ['екстрені', 'аварійні', 'погодинні', 'обмеження']):
+            outages_info = clean_text[:110] + "..."
+        else:
+            outages_info = clean_text[:110] + "..."
+
+    # Розподіляємо по регіонах
+    target_key = "lozova"
+    if any(w in text for w in ['київ', 'київськ', 'dtek']): target_key = "kyiv"
+    elif any(w in text for w in ['дніпр', 'запоріж']): target_key = "dnipro"
+    elif any(w in text for w in ['одес']): target_key = "odesa"
+    elif any(w in text for w in ['львів']): target_key = "lviv"
+    elif any(w in text for w in ['харків', 'харківськ', 'обленерго']): target_key = "kharkiv"
+
+    # Якщо новина загальноукраїнська від Укренерго — оновлюємо статус для всіх регіонів або для головного
+    if 'укренерго' in channel_username or 'укренерго' in text:
+        for k in live_state["locations"]:
+            if outages_info:
+                live_state["locations"][k]["outages"] = outages_info
+
+    # Оновлюємо конкретний регіон
+    if target_key in live_state["locations"]:
+        if code != "green":
+            live_state["locations"][target_key]["code"] = code
+            live_state["locations"][target_key]["codeText"] = code_text
+            live_state["locations"][target_key]["detail"] = f"[@{channel_username}]: {clean_text[:150]}..."
+        
+        if outages_info:
+            live_state["locations"][target_key]["outages"] = outages_info
+
+    # Загальний радар загроз
+    if code != "green":
+        live_state["radar"].insert(0, {
+            "title": f"📍 Регіон: {target_key.upper()} (@{channel_username})",
+            "route": clean_text[:120] + "...",
+            "tag": code_text,
+            "cls": cls
+        })
+        live_state["radar"] = live_state["radar"][:10]
 
 async def start_telegram():
     if API_ID and API_HASH:
