@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ВАРТА & ТРЕШ</title>
+    <title>ВАРТА & ТРЕШ - LIVE MONITORING</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg-primary: #0b0f19;
             --bg-secondary: #151c2c;
             --bg-card: #1e293b;
             --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
             --accent-green: #10b981;
             --accent-blue: #3b82f6;
             --text-main: #f8fafc;
@@ -21,7 +23,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -37,7 +39,7 @@
         /* HEADER */
         .header {
             background-color: var(--bg-secondary);
-            padding: 12px 14px;
+            padding: 10px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -46,7 +48,7 @@
 
         .logo-title {
             font-weight: 800;
-            font-size: 1.05rem;
+            font-size: 1rem;
             color: var(--text-main);
         }
 
@@ -57,502 +59,459 @@
             text-transform: uppercase;
         }
 
-        .status-badge {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid var(--accent-red);
-            color: #fca5a5;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
+        .settings-btn {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid var(--accent-blue);
+            color: #93c5fd;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
             font-weight: 700;
+            cursor: pointer;
         }
 
-        /* MAIN CONTENT CONTAINER */
+        /* MAIN CONTENT */
         .main-content {
             flex: 1;
             overflow-y: auto;
             padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
             padding-bottom: 75px;
         }
 
-        .tab-pane {
-            display: none;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .tab-pane.active {
-            display: flex;
-        }
-
-        /* CARDS */
-        .card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .card-header {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-sub);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* BANNER LOZOVA */
-        .lozova-banner {
-            background: linear-gradient(135deg, #1e1b4b, #311b92);
-            border: 1px solid rgba(99, 102, 241, 0.4);
-            border-radius: 12px;
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .lozova-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #c7d2fe;
-        }
-
-        .lozova-sub {
+        .audio-bar {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--accent-green);
+            color: #a7f3d0;
+            padding: 8px 12px;
+            border-radius: 8px;
             font-size: 0.75rem;
-            color: #a5b4fc;
-            margin-top: 2px;
-        }
-
-        /* MAP SVG */
-        .map-box {
-            background: #0f172a;
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .map-svg {
-            width: 100%;
-            max-height: 210px;
-        }
-
-        .region-shape {
-            fill: #1e293b;
-            stroke: #334155;
-            stroke-width: 1.5;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .region-shape:hover {
-            opacity: 0.8;
-        }
-
-        .region-shape.danger {
-            fill: #7f1d1d;
-            stroke: #ef4444;
-        }
-
-        .region-shape.lozova {
-            stroke: #818cf8;
-            stroke-width: 2.5;
-        }
-
-        .map-text {
-            fill: #94a3b8;
-            font-size: 10px;
             font-weight: 700;
-            pointer-events: none;
-        }
-
-        /* RADAR */
-        .radar-item {
-            background: var(--bg-card);
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            border-left: 3px solid var(--accent-red);
-        }
-
-        .radar-title {
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
-
-        .radar-route {
-            font-size: 0.72rem;
-            color: var(--text-sub);
-        }
-
-        .btn-act {
-            border: none;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            cursor: pointer;
-            margin-left: 4px;
-        }
-
-        .btn-down { background: var(--accent-green); color: #000; }
-        .btn-hit { background: var(--accent-red); color: #fff; }
-
-        /* CHAT */
-        .chat-box {
-            height: 260px;
-            overflow-y: auto;
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
             margin-bottom: 10px;
-        }
-
-        .chat-msg {
-            background: #0f172a;
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-        }
-
-        .chat-msg.my {
-            background: #1e1b4b;
-            align-self: flex-end;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-        }
-
-        .chat-author {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-            margin-bottom: 2px;
-        }
-
-        .chat-controls {
             display: flex;
-            gap: 6px;
-        }
-
-        .chat-input {
-            flex: 1;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            color: var(--text-main);
-            outline: none;
-            font-size: 0.85rem;
-        }
-
-        .btn-send {
-            background: var(--accent-blue);
-            color: #fff;
-            border: none;
-            padding: 0 16px;
-            border-radius: 8px;
-            font-weight: 700;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
         }
 
-        /* FORUM */
-        .forum-cats {
+        .audio-bar.off {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--accent-red);
+            color: #fca5a5;
+        }
+
+        .quick-locations {
             display: flex;
             gap: 6px;
             overflow-x: auto;
+            padding-bottom: 6px;
             margin-bottom: 8px;
         }
 
-        .chip {
+        .loc-chip {
             background: var(--bg-card);
             border: 1px solid var(--border);
             padding: 6px 12px;
             border-radius: 16px;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
+            font-weight: 700;
             white-space: nowrap;
             color: var(--text-sub);
             cursor: pointer;
         }
 
-        .chip.active {
+        .loc-chip.active {
             background: var(--accent-blue);
             color: #fff;
             border-color: var(--accent-blue);
         }
 
-        .forum-card {
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 8px;
+        /* LIVE BANNER */
+        .live-banner {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
         }
 
-        .forum-tag {
-            font-size: 0.7rem;
-            color: var(--accent-blue);
-            font-weight: 700;
-        }
+        .live-banner.code-red { border-color: var(--accent-red); background: linear-gradient(135deg, #450a0a, #18181b); }
+        .live-banner.code-yellow { border-color: var(--accent-yellow); background: linear-gradient(135deg, #451a03, #18181b); }
+        .live-banner.code-green { border-color: var(--accent-green); background: linear-gradient(135deg, #064e3b, #18181b); }
 
-        .forum-title {
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin: 4px 0;
-        }
+        .banner-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .banner-location { font-size: 0.9rem; font-weight: 800; color: #c7d2fe; }
+        .banner-code { font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+        .code-red-tag { background: var(--accent-red); color: #fff; }
+        .code-yellow-tag { background: var(--accent-yellow); color: #000; }
+        .code-green-tag { background: var(--accent-green); color: #000; }
 
-        .forum-desc {
-            font-size: 0.75rem;
-            color: var(--text-sub);
-        }
+        .banner-detail { font-size: 0.85rem; font-weight: 700; line-height: 1.35; }
+        .banner-time { font-size: 0.65rem; color: var(--text-sub); margin-top: 6px; }
 
-        /* BOTTOM NAVBAR */
-        .nav-bar {
+        .card { background: var(--bg-secondary); border-radius: 12px; padding: 12px; border: 1px solid var(--border); margin-bottom: 12px; }
+        .card-header { font-size: 0.78rem; font-weight: 800; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase; display: flex; justify-content: space-between; }
+
+        .radar-list { display: flex; flex-direction: column; gap: 8px; }
+        .radar-item { background: var(--bg-card); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--accent-red); }
+        .radar-item.yellow { border-left-color: var(--accent-yellow); }
+        .radar-title { font-size: 0.85rem; font-weight: 700; }
+        .radar-route { font-size: 0.72rem; color: var(--text-sub); margin-top: 2px; }
+
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid var(--border); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); font-size: 0.7rem; font-weight: 700; cursor: pointer; width: 33%; }
+        .nav-item.active { color: var(--accent-red); }
+
+        /* MODAL (ONBOARDING & SETUP) */
+        .modal-overlay {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg-secondary);
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(11, 15, 25, 0.95);
+            backdrop-filter: blur(8px);
             display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            border-top: 1px solid var(--border);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
         }
 
-        .nav-item {
+        .modal-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-blue);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
+        .modal-desc { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 16px; line-height: 1.4; }
+
+        .select-group {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            color: var(--text-sub);
-            font-size: 0.7rem;
-            font-weight: 700;
-            cursor: pointer;
-            width: 33%;
+            gap: 8px;
+            margin-bottom: 20px;
+            text-align: left;
         }
 
-        .nav-item.active {
-            color: var(--accent-red);
+        .select-label { font-size: 0.75rem; font-weight: 700; color: var(--accent-blue); }
+
+        .custom-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            outline: none;
+            width: 100%;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
     </style>
 </head>
 <body>
 
+    <!-- MODAL НАЛАШТУВАННЯ ПРИ ЗАПУСКУ -->
+    <div class="modal-overlay" id="setup-modal">
+        <div class="modal-card">
+            <div class="modal-title">🛡️ Налаштування Варти</div>
+            <div class="modal-desc">Для активації голосового оповіщення сирени та вибору основного району моніторингу:</div>
+            
+            <div class="select-group">
+                <div class="select-label">Оберіть ваш основний населений пункт:</div>
+                <select class="custom-select" id="user-location-select">
+                    <option value="lozova">📍 Лозівська громада / Лозова</option>
+                    <option value="blyzniuky">📍 Близнюківська громада</option>
+                    <option value="barvinkove">📍 Барвінківська громада</option>
+                    <option value="izium">📍 Ізюмський район</option>
+                </select>
+            </div>
+
+            <button class="start-btn" onclick="confirmSetup()">🔔 УВІМКНУТИ ВАРТУ ТА ЗВУК</button>
+        </div>
+    </div>
+
     <!-- HEADER -->
     <div class="header">
         <div>
             <div class="logo-title">🛡️ ВАРТА & ТРЕШ</div>
-            <div class="logo-sub">Лозова & Харківщина</div>
+            <div class="logo-sub">Лозова & Південь Харківщини</div>
         </div>
-        <div class="status-badge">🚨 ТРИВОГА В ОБЛАСТІ</div>
+        <button class="settings-btn" onclick="openSetupModal()">⚙️ Змінити</button>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="main-content">
-
-        <!-- TAB 1: MONITORING & MAP -->
-        <div id="tab-map" class="tab-pane active">
-            <div class="lozova-banner">
-                <div>
-                    <div class="lozova-title">📍 Лозівський район / Лозова</div>
-                    <div class="lozova-sub">⚠️ Моніторинг загрози балістики та БПЛА</div>
-                </div>
-                <div style="font-size: 1.4rem;">🎯</div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span>🗺️ Карта Харківської області</span>
-                    <span style="font-size: 0.68rem; color: var(--text-sub);">Натисніть на район</span>
-                </div>
-                <div class="map-box">
-                    <svg class="map-svg" viewBox="0 0 300 180">
-                        <!-- Богодухівський -->
-                        <path class="region-shape" d="M 20 30 L 70 20 L 80 60 L 30 70 Z" onclick="showStatus('Богодухівський')"/>
-                        <text x="30" y="50" class="map-text">Богодухів</text>
-
-                        <!-- Харківський -->
-                        <path class="region-shape danger" d="M 70 20 L 140 15 L 150 65 L 80 60 Z" onclick="showStatus('Харківський')"/>
-                        <text x="90" y="45" class="map-text" style="fill:#fff;">Харків</text>
-
-                        <!-- Чугуївський -->
-                        <path class="region-shape danger" d="M 140 15 L 210 25 L 200 80 L 150 65 Z" onclick="showStatus('Чугуївський')"/>
-                        <text x="155" y="50" class="map-text" style="fill:#fff;">Чугуїв</text>
-
-                        <!-- Куп'янський -->
-                        <path class="region-shape danger" d="M 210 25 L 280 30 L 270 100 L 200 80 Z" onclick="showStatus('Куп\'янський')"/>
-                        <text x="215" y="60" class="map-text" style="fill:#fff;">Куп'янськ</text>
-
-                        <!-- Берестинський -->
-                        <path class="region-shape" d="M 30 70 L 80 60 L 90 130 L 40 130 Z" onclick="showStatus('Берестинський')"/>
-                        <text x="40" y="100" class="map-text">Берестин</text>
-
-                        <!-- ЛОЗОВА (ФОКУС) -->
-                        <path class="region-shape lozova danger" d="M 90 130 L 170 110 L 160 175 L 80 170 Z" onclick="showStatus('Лозівський')"/>
-                        <text x="100" y="145" class="map-text" style="fill:#818cf8; font-weight:900;">📍 ЛОЗОВА</text>
-
-                        <!-- Ізюмський -->
-                        <path class="region-shape danger" d="M 170 110 L 270 100 L 250 170 L 160 175 Z" onclick="showStatus('Ізюмський')"/>
-                        <text x="195" y="135" class="map-text" style="fill:#fff;">Ізюм</text>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span>📡 Радар повітряних цілей</span>
-                </div>
-                <div class="radar-item">
-                    <div>
-                        <div class="radar-title">2x КАБ з Бєлгорода</div>
-                        <div class="radar-route">Курс: Дергачі / Харків</div>
-                    </div>
-                    <div>
-                        <button class="btn-act btn-down" onclick="alert('🎯 ППО працює: ціль знищено!')">Збити</button>
-                        <button class="btn-act btn-hit" onclick="alert('🤬 Фіксація влучання!')">Приліт</button>
-                    </div>
-                </div>
-                <div class="radar-item">
-                    <div>
-                        <div class="radar-title">БПЛА Shahed</div>
-                        <div class="radar-route">Дніпропетровщина -> Лозівський р-н</div>
-                    </div>
-                    <div>
-                        <button class="btn-act btn-down" onclick="alert('🎯 ППО працює: ціль знищено!')">Збити</button>
-                        <button class="btn-act btn-hit" onclick="alert('🤬 Фіксація влучання!')">Приліт</button>
-                    </div>
-                </div>
-            </div>
+        <div class="audio-bar" id="audio-bar" onclick="toggleAudio()">
+            <span>🔔 Голосове оповіщення систем</span>
+            <span id="audio-status-text">АКТИВНО</span>
         </div>
 
-        <!-- TAB 2: LIVE CHAT -->
-        <div id="tab-chat" class="tab-pane">
-            <div class="card">
-                <div class="card-header">
-                    <span>💬 Чат Лозова / Область</span>
-                    <span style="font-size:0.68rem; color:var(--text-sub);">Онлайн: 124</span>
-                </div>
-                <div class="chat-box" id="chat-messages">
-                    <div class="chat-msg">
-                        <div class="chat-author">Артем (Лозова)</div>
-                        У районі Авіловки чути гул, перевірте БПЛА!
-                    </div>
-                    <div class="chat-msg">
-                        <div class="chat-author">Сергій (Харків)</div>
-                        Працює ППО, залишайтесь в укриттях.
-                    </div>
-                </div>
-                <div class="chat-controls">
-                    <input type="text" class="chat-input" id="chat-input" placeholder="Повідомити ситуацію...">
-                    <button class="btn-send" onclick="sendChatMessage()">Надіслати</button>
-                </div>
-            </div>
+        <div class="quick-locations">
+            <div class="loc-chip active" id="chip-lozova" onclick="selectLoc('lozova', this)">📍 Лозова</div>
+            <div class="loc-chip" id="chip-blyzniuky" onclick="selectLoc('blyzniuky', this)">📍 Близнюки</div>
+            <div class="loc-chip" id="chip-barvinkove" onclick="selectLoc('barvinkove', this)">📍 Барвінкове</div>
+            <div class="loc-chip" id="chip-izium" onclick="selectLoc('izium', this)">📍 Ізюм</div>
         </div>
 
-        <!-- TAB 3: FORUM UKRAINE -->
-        <div id="tab-forum" class="tab-pane">
-            <div class="forum-cats">
-                <div class="chip active">🪙 Коп UA</div>
-                <div class="chip">🎣 Рибалка UA</div>
-                <div class="chip">🚗 Авто Клуб UA</div>
-                <div class="chip">📢 Барахолка UA</div>
+        <div id="live-banner" class="live-banner code-red">
+            <div class="banner-top">
+                <div class="banner-location" id="banner-title">📍 Лозівський район / Лозова</div>
+                <div class="banner-code code-red-tag" id="banner-tag">КОД ЧЕРВОНИЙ</div>
             </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span>🌐 Всеукраїнський Форум</span>
-                    <button style="background:var(--accent-blue); color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:0.7rem; cursor:pointer;" onclick="createForumPost()">+ Створити</button>
-                </div>
-
-                <div id="forum-posts-list">
-                    <div class="forum-card">
-                        <div class="forum-tag">🪙 Коп UA</div>
-                        <div class="forum-title">Вихід на старі хутори: результати та знахідки</div>
-                        <div class="forum-desc">Хто ходив цього тижня по ЧК чи КР? Які ґрунти після дощів? Діліться звітами!</div>
-                    </div>
-                    <div class="forum-card">
-                        <div class="forum-tag">🎣 Рибалка UA</div>
-                        <div class="forum-title">Осінній хижак на водосховищах України</div>
-                        <div class="forum-desc">Судак та щука активізувалися. На які силікони зараз найкращий кльов?</div>
-                    </div>
-                </div>
+            <div class="banner-detail" id="banner-detail">
+                Підключення до моніторингу...
             </div>
+            <div class="banner-time" id="banner-time">Синхронізація кожні 4 секунди...</div>
         </div>
 
+        <div class="card">
+            <div class="card-header">
+                <span>📡 Оперативний радар</span>
+                <span style="font-size: 0.65rem; color: var(--accent-green);">Live Feed (4s)</span>
+            </div>
+            <div class="radar-list" id="radar-list"></div>
+        </div>
     </div>
 
-    <!-- NAVBAR -->
     <div class="nav-bar">
-        <div class="nav-item active" onclick="switchTab('map', this)">
+        <div class="nav-item active">
             <span style="font-size:1.1rem;">🗺️</span>
             <span>Карта</span>
         </div>
-        <div class="nav-item" onclick="switchTab('chat', this)">
+        <div class="nav-item">
             <span style="font-size:1.1rem;">💬</span>
             <span>Чат</span>
         </div>
-        <div class="nav-item" onclick="switchTab('forum', this)">
+        <div class="nav-item">
             <span style="font-size:1.1rem;">🌐</span>
-            <span>Форум UA</span>
+            <span>Форум</span>
         </div>
     </div>
 
     <script>
-        function switchTab(tabId, element) {
-            var panes = document.querySelectorAll('.tab-pane');
-            for(var i = 0; i < panes.length; i++) {
-                panes[i].classList.remove('active');
+        let currentLocKey = 'lozova';
+        let previousCode = null;
+        let soundEnabled = true;
+
+        let liveData = {
+            'lozova': { title: '📍 Лозівська громада / Лозова', code: 'red', codeText: 'КОД ЧЕРВОНИЙ', detail: '🚨 <b>Балістика з Таганрога!</b> Курс на Захід повз Лозову. <b>Shahed (х2)</b> через Близнюки!' },
+            'blyzniuky': { title: '📍 Близнюківська громада', code: 'red', codeText: 'КОД ЧЕРВОНИЙ', detail: '🛸 <b>Shahed (х2)</b> курсом через Близнюки на Лозову!' },
+            'barvinkove': { title: '📍 Барвінківська громада', code: 'yellow', codeText: 'КОД ЖОВТИЙ', detail: '⚠️ Фіксація розвід БПЛА.' },
+            'izium': { title: '📍 Ізюмський район', code: 'green', codeText: 'ТИША', detail: 'Загрози в дану хвилину не виявлено.' }
+        };
+
+        let activeRadar = [
+            { title: '🚀 Балістика з Таганрога', route: 'Курс на Захід повз Лозову', tag: 'НЕБЕЗПЕКА', cls: 'code-red-tag' },
+            { title: '🛸 БПЛА Shahed (x2)', route: 'Барвінкове ➔ Близнюки ➔ Лозова', tag: 'УКРИТТЯ', cls: 'code-yellow-tag' }
+        ];
+
+        // --- МОДУЛЬ ЗВУКУ ТА СИРЕНИ ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const bar = document.getElementById('audio-bar');
+            const txt = document.getElementById('audio-status-text');
+            if (soundEnabled) {
+                bar.className = 'audio-bar';
+                txt.innerText = 'АКТИВНО';
+                initAudioContext();
+            } else {
+                bar.className = 'audio-bar off';
+                txt.innerText = 'ВИМКНЕНО';
+            }
+        }
+
+        function playSirenSound() {
+            if (!soundEnabled) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            const now = audioCtx.currentTime;
+
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.linearRampToValueAtTime(680, now + 1.5);
+            osc.frequency.linearRampToValueAtTime(320, now + 3.0);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 3.2);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 3.2);
+        }
+
+        function speakAlert(text) {
+            if (!soundEnabled) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'uk-UA';
+                utterance.rate = 0.95;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function triggerVoiceAnnouncement(newCode, isBallistics = false) {
+            if (previousCode === newCode) return;
+
+            if (newCode === 'red') {
+                playSirenSound();
+                setTimeout(() => {
+                    if (isBallistics) {
+                        speakAlert("Увага! Громадяни, ракетна небезпека! Балістика! Негайно в укриття!");
+                    } else {
+                        speakAlert("Увага! Громадяни, повітряна тривога! Перебувайте в укритті!");
+                    }
+                }, 1800);
+            } else if (newCode === 'green' && previousCode === 'red') {
+                speakAlert("Увага! Відбій повітряної тривоги. Будьте обережні.");
+            }
+
+            previousCode = newCode;
+        }
+
+        // --- УПРАВЛІННЯ НАЛАШТУВАННЯМИ ТА МОДАЛЬНИМ ВІКНОМ ---
+        function confirmSetup() {
+            initAudioContext(); // Активація звуку при кліку
+            
+            const selectedLoc = document.getElementById('user-location-select').value;
+            localStorage.setItem('varta_user_loc', selectedLoc);
+            
+            selectLoc(selectedLoc);
+            
+            document.getElementById('setup-modal').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('setup-modal').style.display = 'none';
+            }, 300);
+        }
+
+        function openSetupModal() {
+            const modal = document.getElementById('setup-modal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.style.opacity = '1', 10);
+            
+            const savedLoc = localStorage.getItem('varta_user_loc') || 'lozova';
+            document.getElementById('user-location-select').value = savedLoc;
+        }
+
+        function renderBanner() {
+            const data = liveData[currentLocKey] || liveData['lozova'];
+            document.getElementById('banner-title').innerHTML = data.title;
+            document.getElementById('banner-detail').innerHTML = data.detail;
+
+            const banner = document.getElementById('live-banner');
+            const tag = document.getElementById('banner-tag');
+
+            if (data.code === 'red') {
+                banner.className = 'live-banner code-red';
+                tag.className = 'banner-code code-red-tag';
+                tag.innerText = data.codeText;
+            } else if (data.code === 'yellow') {
+                banner.className = 'live-banner code-yellow';
+                tag.className = 'banner-code code-yellow-tag';
+                tag.innerText = data.codeText;
+            } else {
+                banner.className = 'live-banner code-green';
+                tag.className = 'banner-code code-green-tag';
+                tag.innerText = data.codeText;
+            }
+
+            const now = new Date();
+            document.getElementById('banner-time').innerHTML = `Оновлено: ${now.toLocaleTimeString()} • Опитування: 4 сек`;
+
+            const isBallistic = data.detail.toLowerCase().includes('баліст') || data.detail.toLowerCase().includes('ракет');
+            triggerVoiceAnnouncement(data.code, isBallistic);
+        }
+
+        function renderRadar() {
+            const list = document.getElementById('radar-list');
+            list.innerHTML = '';
+            activeRadar.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'radar-item ' + (item.cls.includes('yellow') ? 'yellow' : '');
+                el.innerHTML = `
+                    <div>
+                        <div class="radar-title">${item.title}</div>
+                        <div class="radar-route">${item.route}</div>
+                    </div>
+                    <span class="banner-code ${item.cls}">${item.tag}</span>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        function selectLoc(key) {
+            currentLocKey = key;
+            previousCode = null;
+            
+            document.querySelectorAll('.loc-chip').forEach(c => c.classList.remove('active'));
+            const activeChip = document.getElementById(`chip-${key}`);
+            if (activeChip) activeChip.classList.add('active');
+
+            renderBanner();
+        }
+
+        async function fetchLiveAlerts() {
+            try {
+                renderBanner();
+                renderRadar();
+            } catch (e) {
+                renderBanner();
+            }
+        }
+
+        // СТАРТОВА ПЕРЕВІРКА ПРИ ЗАВАНИАЖЕННІ
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedLoc = localStorage.getItem('varta_user_loc');
+            if (!savedLoc) {
+                // Перший запуск -> показуємо модальне вікно
+                openSetupModal();
+            } else {
+                // Вже обирав -> ховаємо вікно і обираємо збережену громаду
+                document.getElementById('setup-modal').style.display = 'none';
+                selectLoc(savedLoc);
             }
             
-            var navItems = document.querySelectorAll('.nav-item');
-            for(var j = 0; j < navItems.length; j++) {
-                navItems[j].classList.remove('active');
-            }
-
-            document.getElementById('tab-' + tabId).classList.add('active');
-            element.classList.add('active');
-        }
-
-        function showStatus(regionName) {
-            alert('Район: ' + regionName + '\nСтатус: ⚠️ Загроза повітряного нападу!');
-        }
-
-        function sendChatMessage() {
-            var input = document.getElementById('chat-input');
-            var text = input.value.trim();
-            if(!text) return;
-
-            var box = document.getElementById('chat-messages');
-            var msg = document.createElement('div');
-            msg.className = 'chat-msg my';
-            msg.innerHTML = '<div class="chat-author">Ви</div>' + text;
-            
-            box.appendChild(msg);
-            input.value = '';
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function createForumPost() {
-            var title = prompt('Введіть тему вашого допису:');
-            if(title && title.trim() !== '') {
-                var list = document.getElementById('forum-posts-list');
-                var post = document.createElement('div');
-                post.className = 'forum-card';
-                post.innerHTML = '<div class="forum-tag">💬 Загальне UA</div>' +
-                                 '<div class="forum-title">' + title + '</div>' +
-                                 '<div class="forum-desc">Новий допис від користувача.</div>';
-                list.insertBefore(post, list.firstChild);
-            }
-        }
+            renderRadar();
+            setInterval(fetchLiveAlerts, 4000);
+        });
     </script>
 </body>
 </html>
