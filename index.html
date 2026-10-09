@@ -195,4 +195,364 @@
         }
 
         .btn-act {
-            border: none; 
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+
+        .btn-down { background: var(--accent-green); color: #000; }
+        .btn-hit { background: var(--accent-red); color: #fff; }
+
+        /* CHAT */
+        .chat-box {
+            height: 260px;
+            overflow-y: auto;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chat-msg {
+            background: #0f172a;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .chat-msg.my {
+            background: #1e1b4b;
+            align-self: flex-end;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .chat-author {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 2px;
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.85rem;
+        }
+
+        .btn-send {
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            padding: 0 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* FORUM */
+        .forum-cats {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            margin-bottom: 8px;
+        }
+
+        .chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.72rem;
+            white-space: nowrap;
+            color: var(--text-sub);
+            cursor: pointer;
+        }
+
+        .chip.active {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+
+        .forum-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .forum-tag {
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .forum-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin: 4px 0;
+        }
+
+        .forum-desc {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        /* BOTTOM NAVBAR */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-sub);
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 33%;
+        }
+
+        .nav-item.active {
+            color: var(--accent-red);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <div class="logo-title">🛡️ ВАРТА & ТРЕШ</div>
+            <div class="logo-sub">Лозова & Харківщина</div>
+        </div>
+        <div class="status-badge">🚨 ТРИВОГА В ОБЛАСТІ</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <!-- TAB 1: MONITORING & MAP -->
+        <div id="tab-map" class="tab-pane active">
+            <div class="lozova-banner">
+                <div>
+                    <div class="lozova-title">📍 Лозівський район / Лозова</div>
+                    <div class="lozova-sub">⚠️ Моніторинг загрози балістики та БПЛА</div>
+                </div>
+                <div style="font-size: 1.4rem;">🎯</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>🗺️ Карта Харківської області</span>
+                    <span style="font-size: 0.68rem; color: var(--text-sub);">Натисніть на район</span>
+                </div>
+                <div class="map-box">
+                    <svg class="map-svg" viewBox="0 0 300 180">
+                        <!-- Богодухівський -->
+                        <path class="region-shape" d="M 20 30 L 70 20 L 80 60 L 30 70 Z" onclick="showStatus('Богодухівський')"/>
+                        <text x="30" y="50" class="map-text">Богодухів</text>
+
+                        <!-- Харківський -->
+                        <path class="region-shape danger" d="M 70 20 L 140 15 L 150 65 L 80 60 Z" onclick="showStatus('Харківський')"/>
+                        <text x="90" y="45" class="map-text" style="fill:#fff;">Харків</text>
+
+                        <!-- Чугуївський -->
+                        <path class="region-shape danger" d="M 140 15 L 210 25 L 200 80 L 150 65 Z" onclick="showStatus('Чугуївський')"/>
+                        <text x="155" y="50" class="map-text" style="fill:#fff;">Чугуїв</text>
+
+                        <!-- Куп'янський -->
+                        <path class="region-shape danger" d="M 210 25 L 280 30 L 270 100 L 200 80 Z" onclick="showStatus('Куп\'янський')"/>
+                        <text x="215" y="60" class="map-text" style="fill:#fff;">Куп'янськ</text>
+
+                        <!-- Берестинський -->
+                        <path class="region-shape" d="M 30 70 L 80 60 L 90 130 L 40 130 Z" onclick="showStatus('Берестинський')"/>
+                        <text x="40" y="100" class="map-text">Берестин</text>
+
+                        <!-- ЛОЗОВА (ФОКУС) -->
+                        <path class="region-shape lozova danger" d="M 90 130 L 170 110 L 160 175 L 80 170 Z" onclick="showStatus('Лозівський')"/>
+                        <text x="100" y="145" class="map-text" style="fill:#818cf8; font-weight:900;">📍 ЛОЗОВА</text>
+
+                        <!-- Ізюмський -->
+                        <path class="region-shape danger" d="M 170 110 L 270 100 L 250 170 L 160 175 Z" onclick="showStatus('Ізюмський')"/>
+                        <text x="195" y="135" class="map-text" style="fill:#fff;">Ізюм</text>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📡 Радар повітряних цілей</span>
+                </div>
+                <div class="radar-item">
+                    <div>
+                        <div class="radar-title">2x КАБ з Бєлгорода</div>
+                        <div class="radar-route">Курс: Дергачі / Харків</div>
+                    </div>
+                    <div>
+                        <button class="btn-act btn-down" onclick="alert('🎯 ППО працює: ціль знищено!')">Збити</button>
+                        <button class="btn-act btn-hit" onclick="alert('🤬 Фіксація влучання!')">Приліт</button>
+                    </div>
+                </div>
+                <div class="radar-item">
+                    <div>
+                        <div class="radar-title">БПЛА Shahed</div>
+                        <div class="radar-route">Дніпропетровщина -> Лозівський р-н</div>
+                    </div>
+                    <div>
+                        <button class="btn-act btn-down" onclick="alert('🎯 ППО працює: ціль знищено!')">Збити</button>
+                        <button class="btn-act btn-hit" onclick="alert('🤬 Фіксація влучання!')">Приліт</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: LIVE CHAT -->
+        <div id="tab-chat" class="tab-pane">
+            <div class="card">
+                <div class="card-header">
+                    <span>💬 Чат Лозова / Область</span>
+                    <span style="font-size:0.68rem; color:var(--text-sub);">Онлайн: 124</span>
+                </div>
+                <div class="chat-box" id="chat-messages">
+                    <div class="chat-msg">
+                        <div class="chat-author">Артем (Лозова)</div>
+                        У районі Авіловки чути гул, перевірте БПЛА!
+                    </div>
+                    <div class="chat-msg">
+                        <div class="chat-author">Сергій (Харків)</div>
+                        Працює ППО, залишайтесь в укриттях.
+                    </div>
+                </div>
+                <div class="chat-controls">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Повідомити ситуацію...">
+                    <button class="btn-send" onclick="sendChatMessage()">Надіслати</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: FORUM UKRAINE -->
+        <div id="tab-forum" class="tab-pane">
+            <div class="forum-cats">
+                <div class="chip active">🪙 Коп UA</div>
+                <div class="chip">🎣 Рибалка UA</div>
+                <div class="chip">🚗 Авто Клуб UA</div>
+                <div class="chip">📢 Барахолка UA</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>🌐 Всеукраїнський Форум</span>
+                    <button style="background:var(--accent-blue); color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:0.7rem; cursor:pointer;" onclick="createForumPost()">+ Створити</button>
+                </div>
+
+                <div id="forum-posts-list">
+                    <div class="forum-card">
+                        <div class="forum-tag">🪙 Коп UA</div>
+                        <div class="forum-title">Вихід на старі хутори: результати та знахідки</div>
+                        <div class="forum-desc">Хто ходив цього тижня по ЧК чи КР? Які ґрунти після дощів? Діліться звітами!</div>
+                    </div>
+                    <div class="forum-card">
+                        <div class="forum-tag">🎣 Рибалка UA</div>
+                        <div class="forum-title">Осінній хижак на водосховищах України</div>
+                        <div class="forum-desc">Судак та щука активізувалися. На які силікони зараз найкращий кльов?</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- NAVBAR -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('map', this)">
+            <span style="font-size:1.1rem;">🗺️</span>
+            <span>Карта</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('chat', this)">
+            <span style="font-size:1.1rem;">💬</span>
+            <span>Чат</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('forum', this)">
+            <span style="font-size:1.1rem;">🌐</span>
+            <span>Форум UA</span>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId, element) {
+            var panes = document.querySelectorAll('.tab-pane');
+            for(var i = 0; i < panes.length; i++) {
+                panes[i].classList.remove('active');
+            }
+            
+            var navItems = document.querySelectorAll('.nav-item');
+            for(var j = 0; j < navItems.length; j++) {
+                navItems[j].classList.remove('active');
+            }
+
+            document.getElementById('tab-' + tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        function showStatus(regionName) {
+            alert('Район: ' + regionName + '\nСтатус: ⚠️ Загроза повітряного нападу!');
+        }
+
+        function sendChatMessage() {
+            var input = document.getElementById('chat-input');
+            var text = input.value.trim();
+            if(!text) return;
+
+            var box = document.getElementById('chat-messages');
+            var msg = document.createElement('div');
+            msg.className = 'chat-msg my';
+            msg.innerHTML = '<div class="chat-author">Ви</div>' + text;
+            
+            box.appendChild(msg);
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function createForumPost() {
+            var title = prompt('Введіть тему вашого допису:');
+            if(title && title.trim() !== '') {
+                var list = document.getElementById('forum-posts-list');
+                var post = document.createElement('div');
+                post.className = 'forum-card';
+                post.innerHTML = '<div class="forum-tag">💬 Загальне UA</div>' +
+                                 '<div class="forum-title">' + title + '</div>' +
+                                 '<div class="forum-desc">Новий допис від користувача.</div>';
+                list.insertBefore(post, list.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>
