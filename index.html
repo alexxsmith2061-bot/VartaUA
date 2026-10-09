@@ -299,7 +299,6 @@
             renderBanner();
         }
 
-        // АВТОМАТИЧНЕ ОТРИМАННЯ ДАНИХ З RENDER БЕКЕНДУ КОЖНІ 4 СЕКУНДИ
         async function fetchLiveAlerts() {
             try {
                 const res = await fetch('https://vartaua.onrender.com/api/live-status');
@@ -309,7 +308,7 @@
                 
                 renderBanner();
                 renderRadar();
-            } else {
+            } catch (e) {
                 console.log("Очікування зв'язку з бекендом...");
             }
         }
