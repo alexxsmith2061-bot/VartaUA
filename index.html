@@ -166,7 +166,6 @@
             }
         }
 
-        // БАСОВИТИЙ НИЗЬКИЙ ГУЛ СИРЕФИ
         function playSirenSound() {
             if (!soundEnabled) return;
             initAudioContext();
@@ -192,7 +191,6 @@
             osc.stop(now + 3.7);
         }
 
-        // ГЛИБОКИЙ ЧОЛОВІЧИЙ ГОЛОС
         function speakAlert(text) {
             if (!soundEnabled) return;
             if ('speechSynthesis' in window) {
@@ -304,15 +302,14 @@
         // АВТОМАТИЧНЕ ОТРИМАННЯ ДАНИХ З RENDER БЕКЕНДУ КОЖНІ 4 СЕКУНДИ
         async function fetchLiveAlerts() {
             try {
-                // Коли отримаєте посилання на Render, підставите його сюди замість заглушки:
-                // const res = await fetch('https://your-app.onrender.com/api/live-status');
-                // const data = await res.json();
-                // liveData = data.locations;
-                // activeRadar = data.radar;
+                const res = await fetch('https://vartaua.onrender.com/api/live-status');
+                const data = await res.json();
+                liveData = data.locations;
+                activeRadar = data.radar;
                 
                 renderBanner();
                 renderRadar();
-            } catch (e) {
+            } else {
                 console.log("Очікування зв'язку з бекендом...");
             }
         }
@@ -326,7 +323,7 @@
                 selectLoc(savedLoc);
             }
             renderRadar();
-            setInterval(fetchLiveAlerts, 4000); // Строго 4 секунди
+            setInterval(fetchLiveAlerts, 4000);
         });
     </script>
 </body>
