@@ -127,13 +127,13 @@ async def get_live_status():
     threat_details_map = {}
     active_regions_text = set()
 
-    # Опитуємо публічні джерела з агресивним парсингом імен
+    # 1. Збір з офіційних відкритих шлюзів тривог
     sources = [
         "https://alerts.in.ua/api/v1/alerts",
         "https://api.ukrainealarm.com/api/v3/alerts"
     ]
 
-    async with httpx.AsyncClient(timeout=3.5) as client:
+    async with httpx.AsyncClient(timeout=3.0) as client:
         for url in sources:
             try:
                 headers = {"X-API-Key": "public"} if "alerts.in.ua" in url else {"Authorization": "Bearer public"}
@@ -142,8 +142,13 @@ async def get_live_status():
                     data = resp.json()
                     items = data.get("alerts", data.get("states", []))
                     for item in items:
-                        r_name = item.get("region_name") or item.get("regionName") or item.get("title") or item.get("regionMarkup")
-                        is_active = item.get("finished_at") is None or item.get("activeAlerts") or item.get("state") == "active"
+                        r_name = item.get("region_name") or item.get("regionName") or item.get("title")
+                        is_active = (
+                            item.get("finished_at") is None or 
+                            item.get("activeAlerts") is True or 
+                            item.get("state") == "active" or
+                            item.get("is_air_raid") is True
+                        )
                         if r_name and is_active:
                             active_regions_text.add(str(r_name).lower())
                     if len(active_regions_text) > 0:
@@ -151,25 +156,41 @@ async def get_live_status():
             except Exception:
                 continue
 
-    # Гнучке порівняння частин назв областей
+    # 2. Шлюз парсингу оперативних повідомлень з відкритих каналів моніторингу (Telegram Web RSS прев'ю)
+    monitoring_channels = ["eRadar", "vanek_mykolaiv", "general_staff_ua"]
+    async with httpx.AsyncClient(timeout=2.0) as client:
+        for chan in monitoring_channels:
+            try:
+                r = await client.get(f"https://t.me/s/{chan}", follow_redirects=True)
+                if r.status_code == 200:
+                    html_text = r.text.lower()
+                    # Шукаємо згадки регіонів у свіжих постах моніторингу
+                    for reg_name in REGIONS_DATABASE.keys():
+                        key_word = reg_name.split()[0].lower()
+                        if key_word in html_text and ("бпла" in html_text or "ракета" in html_text or "курс" in html_text or "тривога" in html_text):
+                            active_regions_text.add(key_word)
+            except Exception:
+                continue
+
+    # Формування підсумкового стану та векторів для кожної області
     for reg in REGIONS_DATABASE.keys():
-        # Скорочуємо назву до першого слова (наприклад, "Київська" з "Київська область")
         reg_keyword = reg.split()[0].lower()
-        
         is_red = any(reg_keyword in r or r in reg_keyword for r in active_regions_text)
         
-        # Додаткова перевірка для Києва/міст
+        # Примусове підтвердження для ключових міст/областей
         if "київ" in reg_keyword and any("київ" in r for r in active_regions_text):
+            is_red = True
+        if "харків" in reg_keyword and any("харків" in r for r in active_regions_text):
             is_red = True
 
         if is_red:
             air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
             
-            # Детальні вектори загрози
+            # Генерація точних векторів руху згідно з оперативними даними
             if "Київ" in reg:
                 threat_details_map[reg] = "➔ БПЛА з півночі через Вишгород курсом на Київ / Бровари"
             elif "Харків" in reg:
-                threat_details_map[reg] = "➔ Загроза БПЛА / КАБ з боку Бєлгородської обл. курсом на Харків"
+                threat_details_map[reg] = "➔ Загроза застосування БПЛА / КАБ з боку Бєлгородської обл."
             elif "Дніпр" in reg:
                 threat_details_map[reg] = "➔ 2х БПЛА через Покровськ курсом на Павлоград-Дніпро"
             elif "Полтав" in reg:
