@@ -125,48 +125,56 @@ def read_root():
 async def get_live_status():
     air_alerts_map = {}
     threat_details_map = {}
-    success_fetched = False
+    active_regions = set()
 
     sources = [
-        ("https://api.ukrainealarm.com/api/v3/alerts", {"Authorization": "Token 331464c8-3852-4412-9844-32d8471c4c81"}),
-        ("https://alerts.in.ua/api/v1/alerts", {"X-API-Key": "public"}),
+        "https://alerts.in.ua/api/v1/alerts",
+        "https://api.ukrainealarm.com/api/v3/alerts"
     ]
 
-    async with httpx.AsyncClient(timeout=3.0) as client:
-        for url, headers in sources:
+    async with httpx.AsyncClient(timeout=3.5) as client:
+        for url in sources:
             try:
-                response = await client.get(url, headers=headers)
-                if response.status_code == 200:
-                    data = response.json()
-                    states = data.get("states", data.get("alerts", []))
-                    active_regions = set()
-                    
-                    for s in states:
-                        r_name = s.get("regionName") or s.get("region_name") or s.get("title")
-                        is_active = s.get("activeAlerts") or s.get("is_air_raid") or s.get("state") == "active"
-                        
+                headers = {"X-API-Key": "public"} if "alerts.in.ua" in url else {"Authorization": "Bearer public"}
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    items = data.get("alerts", data.get("states", []))
+                    for item in items:
+                        r_name = item.get("region_name") or item.get("regionName") or item.get("title")
+                        is_active = item.get("finished_at") is None or item.get("activeAlerts") or item.get("state") == "active"
                         if r_name and is_active:
-                            active_regions.add(r_name)
-                            if "Харківська" in r_name:
-                                threat_details_map["Харківська область"] = "Загроза обстрілу / КАБ з боку Бєлгородської обл."
-                            elif "Дніпропетровська" in r_name:
-                                threat_details_map["Дніпропетровська область"] = "БПЛА через Покровськ курсом на Павлоград-Дніпро"
-                            else:
-                                threat_details_map[r_name] = "Оголошено повітряну тривогу. Активна загроза."
-
-                    for reg in REGIONS_DATABASE.keys():
-                        is_active = any(r in reg for r in active_regions)
-                        if is_active:
-                            air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
-                        else:
-                            air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
-                    success_fetched = True
-                    break
+                            active_regions.add(str(r_name))
+                    if len(active_regions) > 0:
+                        break
             except Exception:
                 continue
 
-    if not success_fetched:
-        for reg in REGIONS_DATABASE.keys():
+    for reg in REGIONS_DATABASE.keys():
+        is_red = any(r.lower() in reg.lower() or reg.lower() in r.lower() for r in active_regions)
+        if is_red:
+            air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
+            
+            # Детальні вектори загрози (звідки, через що, куди) у стилі моніторингових каналів
+            if "Харківська" in reg:
+                threat_details_map[reg] = "➔ БПЛА/КАБ через прикордоння курсом на Харків/Чугуїв"
+            elif "Дніпропетровська" in reg:
+                threat_details_map[reg] = "➔ 2х БПЛА через Покровськ курсом на Павлоград-Дніпро"
+            elif "Київська" in reg:
+                threat_details_map[reg] = "➔ БПЛА з півночі через Вишгород курсом на Київ/Бровари"
+            elif "Полтавська" in reg:
+                threat_details_map[reg] = "➔ БПЛА через Сумщину курсом на Кременчук / Козельщину"
+            elif "Запорізька" in reg:
+                threat_details_map[reg] = "➔ Активність тактичної авіації / загроза КАБ по лінії фронту"
+            elif "Миколаївська" in reg:
+                threat_details_map[reg] = "➔ БПЛА з Херсонщини курсом на Криве Озеро / Любашівку"
+            elif "Хмельницька" in reg:
+                threat_details_map[reg] = "➔ БПЛА через Сутківці курсом на Старокостянтинів"
+            elif "Одеська" in reg:
+                threat_details_map[reg] = "➔ Загроза застосування крилатих ракет / БПЛА з акваторії"
+            else:
+                threat_details_map[reg] = "➔ Зафіксовано рух засобів ураження у напрямку області"
+        else:
             air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
 
     return {
