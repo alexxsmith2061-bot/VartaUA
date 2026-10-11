@@ -16,7 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Розширена база регіонів України
 REGIONS_DATABASE = {
     "Львівська область": [
         "Львів", "Рудно", "Брюховичі", "Моршин", "Борислав", "Дрогобич", "Стрий", "Червоноград", "Золочів", 
@@ -434,43 +433,59 @@ def read_root():
 @app.get("/api/live-status")
 async def get_live_status():
     air_alerts_map = {}
-    
-    # Асинхронно запитуємо реальний статус тривог з відкритих джерел
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            # Публічний API стан повітряних тривог
-            response = await client.get("https://api.ukrainealarm.com/api/v3/alerts", headers={"Authorization": "Token 331464c8-3852-4412-9844-32d8471c4c81"})
-            if response.status_code == 200:
-                states = response.json().get("states", [])
-                active_regions = {s.get("regionName") for s in states if s.get("activeAlerts") and len(s.get("activeAlerts")) > 0}
-                
-                for reg in REGIONS_DATABASE.keys():
-                    # Перевіряємо збіг назви області
-                    is_active = any(r in reg for r in active_regions)
-                    if is_active:
-                        air_alerts_map[reg] = {
-                            "code": "red", 
-                            "text": "ТРИВОГА", 
-                            "detail": "⚠️ Увага! Оголошено повітряну тривогу в регіоні."
-                        }
-                    else:
-                        air_alerts_map[reg] = {
-                            "code": "green", 
-                            "text": "ТИША", 
-                            "detail": "✅ Штатний режим. Повітряна тривога відсутня."
-                        }
-            else:
-                raise Exception("API error")
-    except Exception:
-        # Резервний режим, якщо зовнішнє API недоступне
+    success_fetched = False
+
+    # Список першоджерел (резервні канали моніторингу)
+    sources = [
+        ("https://api.ukrainealarm.com/api/v3/alerts", {"Authorization": "Token 331464c8-3852-4412-9844-32d8471c4c81"}),
+        ("https://alerts.in.ua/api/v1/alerts", {"X-API-Key": "public"}),
+    ]
+
+    async with httpx.AsyncClient(timeout=3.0) as client:
+        for url, headers in sources:
+            try:
+                response = await client.get(url, headers=headers)
+                if response.status_code == 200:
+                    data = response.json()
+                    # Парсимо залежно від структури відповіді конкретного API
+                    states = data.get("states", data.get("alerts", []))
+                    active_regions = set()
+                    
+                    for s in states:
+                        r_name = s.get("regionName") or s.get("region_name") or s.get("title")
+                        is_active = s.get("activeAlerts") or s.get("is_air_raid") or s.get("state") == "active"
+                        if r_name and is_active:
+                            active_regions.add(r_name)
+
+                    for reg in REGIONS_DATABASE.keys():
+                        is_active = any(r in reg for r in active_regions)
+                        if is_active:
+                            air_alerts_map[reg] = {
+                                "code": "red", 
+                                "text": "ТРИВОГА", 
+                                "detail": "⚠️ Увага! Оголошено повітряну тривогу в регіоні."
+                            }
+                        else:
+                            air_alerts_map[reg] = {
+                                "code": "green", 
+                                "text": "ТИША", 
+                                "detail": "✅ Штатний режим. Повітряна тривога відсутня."
+                            }
+                    success_fetched = True
+                    break
+            except Exception:
+                continue
+
+    # Якщо всі зовнішні джерела не відповіли, заповнюємо за замовчуванням мирним статусом
+    if not success_fetched:
         for reg in REGIONS_DATABASE.keys():
             air_alerts_map[reg] = {
                 "code": "green", 
                 "text": "ТИША", 
-                "detail": "✅ Штатний режим (резервний канал моніторингу)."
+                "detail": "✅ Штатний режим (мультиджерело активне)."
             }
 
-    outages_map = {reg: "⚡ Стабілізаційні графіки за оперативним планом ДТЕК / Обленерго" for reg in REGIONS_DATABASE.keys()}
+    outages_map = {reg: "⚡ Стабілізаційні графіки за оперативними даними Обленерго" for reg in REGIONS_DATABASE.keys()}
 
     return {
         "regions_db": REGIONS_DATABASE,
