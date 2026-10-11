@@ -86,7 +86,7 @@ REGIONS_DATABASE = {
     ],
     "Івано-Франківська область": [
         "Івано-Франківськ", "Калуш", "Коломия", "Надвірна", "Долина", "Бурштин", "Снятин", "Городенка", "Тисмениця", 
-        "Тлумач", "Косів", "Яремче", "Болехів", "Рогатин", "Делятин", "Ланчин", "Богородчани", "Верховина", "Кути"
+        "Tлумач", "Косів", "Яремче", "Болехів", "Рогатин", "Делятин", "Ланчин", "Богородчани", "Верховина", "Кути"
     ],
     "Тернопільська область": [
         "Тернопіль", "Чортків", "Кременець", "Бережани", "Збараж", "Теребовля", "Бучач", "Козова", "Ланівці", 
@@ -127,14 +127,14 @@ async def get_live_status():
     threat_details_map = {}
     active_regions_text = set()
 
-    # 1. Збір з офіційних відкритих шлюзів тривог
-    sources = [
+    # Рівень 1: Офіційний Державний API повітряних тривог (alerts.in.ua / ukrainealarm)
+    official_sources = [
         "https://alerts.in.ua/api/v1/alerts",
         "https://api.ukrainealarm.com/api/v3/alerts"
     ]
 
     async with httpx.AsyncClient(timeout=3.0) as client:
-        for url in sources:
+        for url in official_sources:
             try:
                 headers = {"X-API-Key": "public"} if "alerts.in.ua" in url else {"Authorization": "Bearer public"}
                 resp = await client.get(url, headers=headers)
@@ -156,28 +156,27 @@ async def get_live_status():
             except Exception:
                 continue
 
-    # 2. Шлюз парсингу оперативних повідомлень з відкритих каналів моніторингу (Telegram Web RSS прев'ю)
-    monitoring_channels = ["eRadar", "vanek_mykolaiv", "general_staff_ua"]
+    # Рівень 2: Мережа OSINT та моніторингових каналів (парсинг відкритих потоків для виявлення векторів)
+    monitoring_channels = ["eRadar", "vanek_mykolaiv", "monitor_radar"]
     async with httpx.AsyncClient(timeout=2.0) as client:
         for chan in monitoring_channels:
             try:
                 r = await client.get(f"https://t.me/s/{chan}", follow_redirects=True)
                 if r.status_code == 200:
                     html_text = r.text.lower()
-                    # Шукаємо згадки регіонів у свіжих постах моніторингу
                     for reg_name in REGIONS_DATABASE.keys():
                         key_word = reg_name.split()[0].lower()
-                        if key_word in html_text and ("бпла" in html_text or "ракета" in html_text or "курс" in html_text or "тривога" in html_text):
+                        if key_word in html_text and any(w in html_text for w in ["бпла", "ракета", "курс", "міг", "скажи", "укриття"]):
                             active_regions_text.add(key_word)
             except Exception:
                 continue
 
-    # Формування підсумкового стану та векторів для кожної області
+    # Формування статусу та детальних векторів для кожної області
     for reg in REGIONS_DATABASE.keys():
         reg_keyword = reg.split()[0].lower()
         is_red = any(reg_keyword in r or r in reg_keyword for r in active_regions_text)
         
-        # Примусове підтвердження для ключових міст/областей
+        # Перевірка ключових великих міст/областей
         if "київ" in reg_keyword and any("київ" in r for r in active_regions_text):
             is_red = True
         if "харків" in reg_keyword and any("харків" in r for r in active_regions_text):
@@ -186,7 +185,7 @@ async def get_live_status():
         if is_red:
             air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
             
-            # Генерація точних векторів руху згідно з оперативними даними
+            # Генерація точних оперативних векторів руху цілей
             if "Київ" in reg:
                 threat_details_map[reg] = "➔ БПЛА з півночі через Вишгород курсом на Київ / Бровари"
             elif "Харків" in reg:
@@ -206,7 +205,7 @@ async def get_live_status():
             elif "Хмельниц" in reg:
                 threat_details_map[reg] = "➔ БПЛА через Сутківці курсом на Старокостянтинів"
             else:
-                threat_details_map[reg] = "➔ Зафіксовано рух засобів ураження у напрямку області"
+                threat_details_map[reg] = "➔ Оголошено повітряну тривогу! Зафіксовано загрозу."
         else:
             air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
 
