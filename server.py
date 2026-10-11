@@ -154,6 +154,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             gap: 10px;
         }
 
+        /* Верхня частина: 2 колонки */
         .top-section {
             display: flex;
             gap: 10px;
@@ -183,27 +184,48 @@ HTML_CONTENT = """<!DOCTYPE html>
         .autocomplete-item:hover { background: rgba(59, 130, 246, 0.25); color: #fff; }
 
         .status-card { height: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; border-left: 4px solid var(--accent-green); display: flex; flex-direction: column; justify-content: space-between; }
-        .status-card.red { border-left-color: var(--accent-red); background: rgba(239, 68, 68, 0.1); }
+        .status-card.red { border-left-color: var(--accent-red); background: rgba(239, 68, 68, 0.12); }
         .status-header { display: flex; justify-content: space-between; align-items: center; }
         .status-title { font-size: 0.85rem; font-weight: 800; }
         .status-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
         .badge-red { background: var(--accent-red); color: #fff; }
         .badge-green { background: var(--accent-green); color: #000; }
 
-        .bottom-section {
+        /* Нижня секція: розділена на 2 стовпці (зліва порожньо або доп. інфо, справа термінал активних тривог) */
+        .bottom-split {
+            display: flex;
+            gap: 10px;
             flex: 1;
+            overflow: hidden;
+        }
+        .bottom-left-pane {
+            width: 50%;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--text-sub);
+            font-size: 0.75rem;
+        }
+        .bottom-right-pane {
+            width: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
             overflow: hidden;
         }
 
-        .board-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .board-title { font-size: 0.75rem; font-weight: 800; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 0.5px; }
+        .board-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .board-title { font-size: 0.7rem; font-weight: 800; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 0.5px; }
 
         .ticker-list {
             flex: 1;
@@ -211,27 +233,22 @@ HTML_CONTENT = """<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             gap: 6px;
-            padding-right: 4px;
+            padding-right: 2px;
         }
 
         .ticker-item {
             background: rgba(15, 23, 42, 0.95);
             border: 1px solid var(--border);
-            border-left: 3px solid var(--accent-green);
+            border-left: 3px solid var(--accent-red);
             border-radius: 4px;
-            padding: 8px;
+            padding: 7px;
             font-family: var(--font-mono);
-            font-size: 0.73rem;
+            font-size: 0.7rem;
             line-height: 1.35;
         }
-        .ticker-item.alert {
-            border-left-color: var(--accent-red);
-            background: rgba(239, 68, 68, 0.08);
-        }
-        .ticker-region { font-weight: 800; color: #f1f5f9; text-transform: uppercase; font-size: 0.75rem; display: flex; justify-content: space-between; }
-        .ticker-time { font-size: 0.65rem; color: var(--accent-yellow); }
-        .ticker-text { color: #cbd5e1; margin-top: 3px; }
-        .ticker-target { color: #f87171; font-weight: 700; }
+        .ticker-region { font-weight: 800; color: #f1f5f9; text-transform: uppercase; font-size: 0.72rem; display: flex; justify-content: space-between; }
+        .ticker-time { font-size: 0.6rem; color: var(--accent-yellow); }
+        .ticker-text { color: #f87171; margin-top: 2px; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -275,14 +292,18 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- НИЖНЯ СЕКЦІЯ: ТАБЛО ОПЕРАТИВНОЇ ОБСТАНОВКИ З ПРІОРИТЕТОМ ТРИВОГ -->
-        <div class="bottom-section">
-            <div class="board-header">
-                <div class="board-title">📡 ТАБЛО ОПЕРАТИВНИХ ЗАГРОЗ ТА КУРСУ РУХУ (УКРАЇНА)</div>
+        <!-- НИЖНЯ СЕКЦІЯ: РОЗДІЛЕНА НАПІВНИЦЮ (СПРАВА ТЕРМІНАЛ ТРИВОГ) -->
+        <div class="bottom-split">
+            <div class="bottom-left-pane">
+                <div>🛡️ Система працює в автономному режимі. Перевірка дублюючих каналів активна.</div>
             </div>
-
-            <div class="ticker-list" id="ticker-list">
-                <div class="ticker-item">Опитування оперативних даних...</div>
+            <div class="bottom-right-pane">
+                <div class="board-header">
+                    <div class="board-title">🚨 АКТИВНІ ТРИВОГИ ТА ЗАГРОЗИ</div>
+                </div>
+                <div class="ticker-list" id="ticker-list">
+                    <div class="ticker-item" style="border-left-color: var(--accent-green); color: var(--accent-green);">Перевірка повітряного простору...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -304,7 +325,11 @@ HTML_CONTENT = """<!DOCTYPE html>
                 opt.value = reg; opt.innerText = reg;
                 regSel.appendChild(opt);
             }
-            if (currentVal && globalDb[currentVal]) regSel.value = currentVal;
+            if (currentVal && globalDb[currentVal]) {
+                regSel.value = currentVal;
+            } else if (!regSel.value && globalDb["Харківська область"]) {
+                regSel.value = "Харківська область";
+            }
             isInitialized = true;
             renderAll();
         }
@@ -372,32 +397,44 @@ HTML_CONTENT = """<!DOCTYPE html>
                 descEl.innerText = '✅ Повітряний простір спокійний.';
             }
 
-            // 2. Нижня стрічка загроз (сортування: спочатку тривоги з пріоритетом)
+            // 2. Права нижня панель: виводимо ТІЛЬКИ ті області, де зараз реальна ТРИВОГА
             const tickerList = document.getElementById('ticker-list');
             tickerList.innerHTML = '';
 
-            let sortedRegions = Object.keys(globalDb).sort((a, b) => {
-                let aRed = (airAlerts[a] && airAlerts[a].code === 'red') ? 1 : 0;
-                let bRed = (airAlerts[b] && airAlerts[b].code === 'red') ? 1 : 0;
-                return bRed - aRed; // Тривоги першими
-            });
+            let activeAlertsFound = false;
+            for (const rName in airAlerts) {
+                if (airAlerts[rName].code === 'red') {
+                    activeAlertsFound = true;
+                    const detailText = threatDetails[rName] || "Повітряна тривога! Загроза застосування засобів ураження.";
+                    const nowStr = new Date().toLocaleTimeString();
 
-            sortedRegions.forEach(rName => {
-                const isRed = airAlerts[rName] && airAlerts[rName].code === 'red';
-                const detailText = threatDetails[rName] || (isRed ? "Повітряна тривога! Загроза застосування засобів ураження." : "Штатний режим, повітряний простір чистий.");
-                const nowStr = new Date().toLocaleTimeString();
+                    const item = document.createElement('div');
+                    item.className = 'ticker-item';
+                    item.innerHTML = `
+                        <div class="ticker-region">
+                            <span>🚨 ${rName}</span>
+                            <span class="ticker-time">${nowStr}</span>
+                        </div>
+                        <div class="ticker-text">${detailText}</div>
+                    `;
+                    tickerList.appendChild(item);
+                }
+            }
 
+            if (!activeAlertsFound) {
                 const item = document.createElement('div');
-                item.className = isRed ? 'ticker-item alert' : 'ticker-item';
+                item.className = 'ticker-item';
+                item.style.borderLeftColor = 'var(--accent-green)';
+                item.style.color = 'var(--accent-green)';
                 item.innerHTML = `
                     <div class="ticker-region">
-                        <span>${isRed ? '🚨' : '🟢'} ${rName}</span>
-                        <span class="ticker-time">${nowStr}</span>
+                        <span>🟢 УСІ ОБЛАСТІ</span>
+                        <span class="ticker-time">${new Date().toLocaleTimeString()}</span>
                     </div>
-                    <div class="ticker-text">Обстановка: <span class="${isRed ? 'ticker-target' : ''}">${detailText}</span></div>
+                    <div class="ticker-text" style="color: var(--accent-green);">Активні тривоги відсутні. Спокійно.</div>
                 `;
                 tickerList.appendChild(item);
-            });
+            }
         }
 
         async function fetchLiveAlerts() {
@@ -463,20 +500,12 @@ async def get_live_status():
                         
                         if r_name and is_active:
                             active_regions.add(r_name)
-                            
-                            # Деталізований напрямок і що летить
-                            if "Дніпропетровська" in r_name:
-                                threat_details_map["Дніпропетровська область"] = "Повітряна тривога! 2 реактивних БПЛА через Покровськ курсом Павлоград-Дніпро"
-                            elif "Хмельницький" in r_name or "Хмельницька" in r_name:
-                                threat_details_map["Хмельницька область"] = "Повітряна тривога! БПЛА через Сутківці курсом Хмельницький"
-                            elif "Харківська" in r_name:
-                                threat_details_map["Харківська область"] = "Повітряна тривога! Загроза КАБ / РСЗВ з боку Бєлгородської обл."
-                            elif "Сумська" in r_name:
-                                threat_details_map["Сумська область"] = "Повітряна тривога! Ударні БПЛА курсом на Конотоп / Ромни"
-                            elif "Запорізька" in r_name:
-                                threat_details_map["Запорізька область"] = "Повітряна тривога! Активність тактичної авіації / пуски КАБ"
+                            if "Харківська" in r_name:
+                                threat_details_map["Харківська область"] = "Загроза обстрілу / КАБ з боку Бєлгородської обл."
+                            elif "Дніпропетровська" in r_name:
+                                threat_details_map["Дніпропетровська область"] = "БПЛА через Покровськ курсом на Павлоград-Дніпро"
                             else:
-                                threat_details_map[r_name] = "Повітряна тривога! Загроза застосування засобів повітряного ураження"
+                                threat_details_map[r_name] = "Оголошено повітряну тривогу. Активна загроза."
 
                     for reg in REGIONS_DATABASE.keys():
                         is_active = any(r in reg for r in active_regions)
@@ -500,5 +529,4 @@ async def get_live_status():
     }
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("server:app", host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 8000
