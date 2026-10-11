@@ -1,274 +1,273 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ВАРТА & СВІТЛО • УКРАЇНА</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg-primary: #080c14;
-            --bg-secondary: #0f172a;
-            --bg-card: #1e293b;
-            --accent-red: #ef4444;
-            --accent-yellow: #f59e0b;
-            --accent-green: #10b981;
-            --accent-blue: #3b82f6;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
-            --font-mono: "Courier New", Courier, monospace;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-primary); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        .header { background-color: var(--bg-secondary); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .logo-title { font-weight: 800; font-size: 0.95rem; color: var(--text-main); letter-spacing: 0.5px; }
-        .logo-sub { font-size: 0.6rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
-        
-        .main-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
-
-        .top-section { display: flex; gap: 10px; flex-shrink: 0; }
-        .top-left { width: 50%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .top-right { width: 50%; display: flex; flex-direction: column; }
-
-        .select-group { display: flex; flex-direction: column; gap: 4px; position: relative; }
-        .select-label { font-size: 0.68rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
-        .custom-select, .custom-input { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-main); padding: 7px 9px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; width: 100%; outline: none; }
-        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 0 0 6px 6px; max-height: 140px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .autocomplete-item { padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
-        .autocomplete-item:hover { background: rgba(59, 130, 246, 0.25); color: #fff; }
-
-        .status-card { height: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; border-left: 4px solid var(--accent-green); display: flex; flex-direction: column; justify-content: space-between; }
-        .status-card.red { border-left-color: var(--accent-red); background: rgba(239, 68, 68, 0.12); }
-        .status-header { display: flex; justify-content: space-between; align-items: center; }
-        .status-title { font-size: 0.85rem; font-weight: 800; }
-        .status-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
-        .badge-red { background: var(--accent-red); color: #fff; }
-        .badge-green { background: var(--accent-green); color: #000; }
-
-        .bottom-split { display: flex; gap: 10px; flex: 1; overflow: hidden; }
-        .bottom-left-pane { width: 50%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: var(--text-sub); font-size: 0.75rem; }
-        .bottom-right-pane { width: 50%; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
-
-        .board-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 4px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .board-title { font-size: 0.7rem; font-weight: 800; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .ticker-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
-        .ticker-item { background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border); border-left: 3px solid var(--accent-red); border-radius: 4px; padding: 7px; font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.35; }
-        .ticker-region { font-weight: 800; color: #f1f5f9; text-transform: uppercase; font-size: 0.72rem; display: flex; justify-content: space-between; }
-        .ticker-time { font-size: 0.6rem; color: var(--accent-yellow); }
-        .ticker-text { color: #f87171; margin-top: 2px; font-weight: 700; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Варта & Світло</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--tx:#0f1720;--mut:#5b6776;--bd:#dde2e9;--ok:#1a9e55;--al:#e0312d;--wn:#d99a00;--ac:#2563eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0f14;--card:#121821;--tx:#e6edf3;--mut:#8b98a8;--bd:#222c3a;--ok:#2ecc71;--al:#ff4d4a;--wn:#f5b301;--ac:#4c8dff}}
+:root[data-theme="dark"]{--bg:#0b0f14;--card:#121821;--tx:#e6edf3;--mut:#8b98a8;--bd:#222c3a;--ok:#2ecc71;--al:#ff4d4a;--wn:#f5b301;--ac:#4c8dff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--bd)}
+h1{font-size:16px;margin:0;letter-spacing:.08em}
+.live{display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block}
+.live .dot{animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.25}}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:3px 8px;border:1px solid var(--bd);border-radius:99px;color:var(--mut);display:flex;gap:5px;align-items:center}
+.chip.off .dot{background:var(--al)}
+button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--ac)}
+main{display:grid;gap:12px;padding:12px 16px;max-width:1100px;margin:0 auto;grid-template-columns:1fr 1fr;grid-template-areas:"my map" "act map" "feed stat" "src src"}
+@media(max-width:760px){main{grid-template-columns:1fr;grid-template-areas:"my" "map" "act" "feed" "stat" "src"}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;min-width:0}
+.card h2{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+#my{grid-area:my;border-left:5px solid var(--ok)}#my.alert{border-left-color:var(--al)}#my.warn{border-left-color:var(--wn)}
+#my .big{font-size:22px;font-weight:700}
+#my .st{font-size:18px;margin:4px 0}
+.m{color:var(--mut);font-size:13px}
+#map{grid-area:map}#act{grid-area:act}#feed{grid-area:feed}#stat{grid-area:stat}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.t{aspect-ratio:1.15;border-radius:6px;border:1px solid var(--bd);background:var(--bd);color:var(--tx);font-size:clamp(8px,1.6vw,11px);padding:2px;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1.05;overflow:hidden;word-break:break-word}
+.t.e{visibility:hidden}
+.t.calm{background:color-mix(in srgb,var(--ok) 25%,var(--card))}
+.t.warn{background:var(--wn);color:#111}
+.t.alert{background:var(--al);color:#fff;animation:p 1.2s infinite}
+.t.me{outline:2px solid var(--ac);outline-offset:1px}
+.lg{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--mut)}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}
+#det{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);font-size:14px}
+.row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.row:last-child{border:0}
+.feedrow{font-size:13px;padding:5px 0;border-bottom:1px solid var(--bd);display:flex;gap:8px}
+.feedrow b{font-variant-numeric:tabular-nums;color:var(--mut);font-weight:500}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.kpi div{font-size:26px;font-weight:700}.kpi span{display:block;font-size:11px;color:var(--mut);font-weight:400}
+dialog{border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(440px,92vw);padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+label{display:block;margin:12px 0 4px;font-size:13px;color:var(--mut)}
+select,input[type=text]{width:100%;font:inherit;padding:9px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+.ac{position:relative}
+#sug{position:absolute;left:0;right:0;top:100%;z-index:9;background:var(--card);border:1px solid var(--bd);border-radius:8px;margin-top:3px;max-height:220px;overflow:auto;display:none}
+#sug div{padding:8px 10px;cursor:pointer}
+#sug div.on,#sug div:hover{background:var(--ac);color:#fff}
+.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.btns .pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+.empty{color:var(--mut);font-size:14px}#bn{display:none;padding:10px 16px;font-weight:600;text-align:center;background:var(--al);color:#fff}#my.unk{border-left-color:var(--mut)}.t.unk{background:var(--bd);color:var(--mut);border-style:dashed}#src{grid-area:src;font-size:13px}#src li{margin:3px 0}#src a{color:var(--ac)}
+</style>
 </head>
 <body>
-    <div class="header">
-        <div>
-            <div class="logo-title">🛡️ ВАРТА & СВІТЛО</div>
-            <div class="logo-sub">Моніторинг України</div>
-        </div>
-        <div id="update-time" style="font-size: 0.65rem; color: var(--accent-green); font-family: var(--font-mono);">LIVE 00:00:00</div>
-    </div>
+<header>
+  <h1>ВАРТА &amp; СВІТЛО</h1>
+  <div class="chips" id="chips"></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="live"><span class="dot"></span>LIVE <span id="clk">--:--:--</span></div>
+    <button id="setBtn" aria-label="Налаштування">⚙ Налаштування</button>
+  </div>
+</header>
+<div id="bn"></div>
+<main>
+  <section class="card" id="my"></section>
+  <section class="card" id="map"><h2>Карта (схематична)</h2><div class="grid" id="grid"></div>
+    <div class="lg"><span><i style="background:var(--ok)"></i>Тиша</span><span><i style="background:var(--wn)"></i>Попередження</span><span><i style="background:var(--al)"></i>Тривога</span></div>
+    <div id="det" class="m">Натисніть на область, щоб побачити деталі.</div></section>
+  <section class="card" id="act"></section>
+  <section class="card" id="feed"><h2>Стрічка повідомлень</h2><div id="fl"></div></section>
+  <section class="card" id="stat"><h2>Статистика доби</h2><div class="kpi" id="kpi"></div><p class="m" id="upd"></p></section>
+  <section class="card" id="src"><h2>Джерела даних</h2><ul style="margin:0;padding-left:18px"><li>Повітряні Сили ЗСУ — <a href="https://t.me/kpszsu">t.me/kpszsu</a></li><li>Агрегатор тривог alerts.in.ua (API)</li><li>Telegram «Повітряна тривога» — <a href="https://t.me/air_alert_ua">t.me/air_alert_ua</a></li><li>Харківська ОВА — <a href="https://t.me/synegubov">t.me/synegubov</a>; канали ОВА інших областей додаються в collector.py</li></ul><p class="m">🟢 «Тиша» показується лише за свіжими даними офіційного потоку. 🟡 — сигнал із Telegram-каналів про загрозу (це не офіційна тривога). ❓ — даних немає. Сайт не замінює сирени й офіційні застосунки.</p></section>
+</main>
 
-    <div class="main-container">
-        <div class="top-section">
-            <div class="top-left">
-                <div class="select-group">
-                    <div class="select-label">Область:</div>
-                    <select class="custom-select" id="region-select" onchange="onRegionChange()">
-                        <option value="">Завантаження...</option>
-                    </select>
-                </div>
-                <div class="select-group">
-                    <div class="select-label">Населений пункт:</div>
-                    <input type="text" class="custom-input" id="city-input" placeholder="Введіть село або місто..." oninput="filterCities()" autocomplete="off">
-                    <div class="autocomplete-list" id="autocomplete"></div>
-                </div>
-            </div>
-            <div class="top-right">
-                <div class="status-card" id="my-location-card">
-                    <div>
-                        <div class="status-header">
-                            <div class="status-title" id="my-location-title">Локація</div>
-                            <span class="status-badge badge-green" id="my-location-badge">ТИША</span>
-                        </div>
-                        <div style="font-size: 0.72rem; color: var(--text-sub); margin-top: 6px;" id="my-location-desc">Очікування...</div>
-                    </div>
-                    <div style="font-size: 0.65rem; color: var(--text-sub); border-top: 1px solid var(--border); margin-top: 6px; padding-top: 4px;" id="my-location-outage">⚡ Графіки світла: Стабільні</div>
-                </div>
-            </div>
-        </div>
+<dialog id="dlg">
+  <h3 style="margin:0">Налаштування</h3>
+  <label for="obl">Область</label>
+  <select id="obl"></select>
+  <label for="city">Населений пункт</label>
+  <div class="ac"><input type="text" id="city" autocomplete="off" placeholder="Почніть вводити назву…"><div id="sug"></div></div>
+  <p class="m" id="dbinfo"></p>
+  <label for="file">Повна база НП (JSON або CSV)</label>
+  <input type="file" id="file" accept=".json,.csv,.txt">
+  <p class="m">JSON: {"Харківська область":["Харків","Лозова"]}. CSV: область;назва.</p>
+  <div class="btns"><button id="cancel">Закрити</button><button class="pri" id="save">Зберегти</button></div>
+</dialog>
 
-        <div class="bottom-split">
-            <div class="bottom-left-pane">
-                <div>🛡️ Система працює в автономному режимі. Резервні канали активні.</div>
-            </div>
-            <div class="bottom-right-pane">
-                <div class="board-header">
-                    <div class="board-title">🚨 АКТИВНІ ТРИВОГИ ТА ЗАГРОЗИ</div>
-                </div>
-                <div class="ticker-list" id="ticker-list">
-                    <div class="ticker-item" style="border-left-color: var(--accent-green); color: var(--accent-green);">Перевірка простору...</div>
-                </div>
-            </div>
-        </div>
-    </div>
+<script>
+// ===== Конфіг =====
+// Для реальних даних вкажіть адресу вашого бекенду (БД + Telegram collector).
+// Формат: {"Харківська область":{"state":"alert|warn|calm","since":"ISO"}, ..., "_sources":{"db":true,"telegram":true,"api":true}}
+// Увага: опублікована сторінка не може звертатися до сторонніх сайтів — для API розмістіть сторінку у себе.
+const DEMO = /[?&]demo=1/.test(location.search); // ?demo=1 — показ без сервера
+const API_URL = DEMO ? "" : "/api/status"; // віддає collector.py з цього ж хоста
 
-    <script>
-        let globalDb = {};
-        let airAlerts = {};
-        let threatDetails = {};
-        let selectedCity = "";
-        let isInitialized = false;
+const MAP = [ // [назва, ряд, колонка, підпис]
+["Волинська область",0,0],["Рівненська область",0,1],["Житомирська область",0,2],["м. Київ",0,3,"Київ"],["Чернігівська область",0,4],["Сумська область",0,5],
+["Львівська область",1,0],["Тернопільська область",1,1],["Хмельницька область",1,2],["Київська область",1,3],["Полтавська область",1,4],["Харківська область",1,5],
+["Закарпатська область",2,0],["Івано-Франківська область",2,1],["Чернівецька область",2,2],["Вінницька область",2,3],["Черкаська область",2,4],["Дніпропетровська область",2,5],["Донецька область",2,6],
+["Одеська область",3,3],["Кіровоградська область",3,4],["Запорізька область",3,5],
+["Миколаївська область",4,4],["Херсонська область",4,5]
+]; // без АР Крим та Луганської області
+const REG = MAP.map(m=>m[0]).sort((a,b)=>a.localeCompare(b,"uk"));
+const lab = n => n.replace(" область","").replace("м. ","");
 
-        function initSelectors() {
-            const regSel = document.getElementById('region-select');
-            if (!regSel) return;
-            const currentVal = regSel.value;
-            regSel.innerHTML = '';
-            for (const reg in globalDb) {
-                const opt = document.createElement('option');
-                opt.value = reg; opt.innerText = reg;
-                regSel.appendChild(opt);
-            }
-            if (currentVal && globalDb[currentVal]) {
-                regSel.value = currentVal;
-            } else if (!regSel.value && globalDb["Харківська область"]) {
-                regSel.value = "Харківська область";
-            }
-            isInitialized = true;
-            renderAll();
-        }
+const SAMPLE = {
+"Вінницька область":"Вінниця,Жмеринка,Козятин,Могилів-Подільський,Гайсин,Бар",
+"Волинська область":"Луцьк,Ковель,Нововолинськ,Володимир,Ківерці,Любомль",
+"Дніпропетровська область":"Дніпро,Кривий Ріг,Кам'янське,Нікополь,Павлоград,Покров,Булахівка",
+"Донецька область":"Краматорськ,Слов'янськ,Дружківка,Костянтинівка,Покровськ",
+"Житомирська область":"Житомир,Бердичів,Коростень,Новоград-Волинський,Малин,Овруч",
+"Закарпатська область":"Ужгород,Мукачево,Хуст,Берегове,Виноградів,Тячів",
+"Запорізька область":"Запоріжжя,Мелітополь,Бердянськ,Енергодар,Оріхів,Вільнянськ",
+"Івано-Франківська область":"Івано-Франківськ,Калуш,Коломия,Надвірна,Яремче,Болехів",
+"Київська область":"Біла Церква,Бровари,Бориспіль,Ірпінь,Буча,Вишневе,Васильків,Українка",
+"Кіровоградська область":"Кропивницький,Олександрія,Світловодськ,Знам'янка,Гайворон,Мала Виска",
+"Львівська область":"Львів,Дрогобич,Стрий,Червоноград,Борислав,Самбір",
+"Миколаївська область":"Миколаїв,Первомайськ,Вознесенськ,Южноукраїнськ,Нова Одеса,Очаків",
+"Одеська область":"Одеса,Ізмаїл,Чорноморськ,Подільськ,Білгород-Дністровський,Роздільна",
+"Полтавська область":"Полтава,Кременчук,Лубни,Миргород,Гадяч,Горішні Плавні",
+"Рівненська область":"Рівне,Дубно,Сарни,Костопіль,Острог,Здолбунів",
+"Сумська область":"Суми,Конотоп,Шостка,Охтирка,Глухів,Ромни",
+"Тернопільська область":"Тернопіль,Чортків,Кременець,Бережани,Збараж,Заліщики",
+"Харківська область":"Харків,Ізюм,Куп'янськ,Лозова,Чугуїв,Балаклія",
+"Херсонська область":"Херсон,Нова Каховка,Скадовськ,Гола Пристань,Генічеськ,Каховка",
+"Хмельницька область":"Хмельницький,Кам'янець-Подільський,Шепетівка,Нетішин,Славута,Волочиськ",
+"Черкаська область":"Черкаси,Умань,Сміла,Золотоноша,Канів,Корсунь-Шевченківський",
+"Чернівецька область":"Чернівці,Хотин,Новодністровськ,Сторожинець,Кіцмань,Заставна",
+"Чернігівська область":"Чернігів,Ніжин,Прилуки,Новгород-Сіверський,Корюківка,Бахмач"
+};
+let DB = {}; for (const k in SAMPLE) DB[k] = SAMPLE[k].split(",");
+let fullDb = false;
+try { const s = localStorage.getItem("vs_db"); if (s) { DB = JSON.parse(s); fullDb = true; } } catch(e){}
 
-        function onRegionChange() {
-            selectedCity = "";
-            const input = document.getElementById('city-input');
-            if (input) input.value = '';
-            renderAll();
-        }
+// ===== Стан =====
+let myRegion = null, myCity = "", sel = null;
+try { myRegion = localStorage.getItem("vs_region"); myCity = localStorage.getItem("vs_city") || ""; } catch(e){}
+if (!REG.includes(myRegion)) myRegion = null;
+const A = {}; REG.forEach(r => A[r] = {s:"unk", since:null}); // невідомо, доки не прийшли свіжі дані
+let feed = [], today = 0, srcs = {alerts_in_ua:false, telegram:false, api:false}, lastUpd = new Date(), lastGood = 0, stale = false;
+const $ = id => document.getElementById(id);
+const hm = d => d.toLocaleTimeString("uk-UA",{hour:"2-digit",minute:"2-digit"});
+const dur = ms => { const s = Math.max(0,Math.floor(ms/1000)); return [s/3600|0,(s/60|0)%60,s%60].map(x=>String(x).padStart(2,"0")).join(":"); };
+const word = s => s==="alert"?"🔴 Повітряна тривога":s==="warn"?"🟡 Попередження":s==="unk"?"❓ Немає даних":"🟢 Тиша";
 
-        function filterCities() {
-            const regSel = document.getElementById('region-select');
-            const input = document.getElementById('city-input');
-            const listEl = document.getElementById('autocomplete');
-            if (!regSel || !input || !listEl) return;
-            const reg = regSel.value;
-            const query = input.value.toLowerCase().trim();
-            selectedCity = input.value.trim();
-            renderAll();
-            
-            listEl.innerHTML = '';
-            if (!query || !globalDb[reg]) { listEl.style.display = 'none'; return; }
-            const matches = globalDb[reg].filter(c => c.toLowerCase().includes(query));
-            if (matches.length === 0) { listEl.style.display = 'none'; return; }
-            matches.forEach(city => {
-                const item = document.createElement('div');
-                item.className = 'autocomplete-item';
-                item.innerText = city;
-                item.onclick = () => {
-                    input.value = city;
-                    selectedCity = city;
-                    listEl.style.display = 'none';
-                    renderAll();
-                };
-                listEl.appendChild(item);
-            });
-            listEl.style.display = 'block';
-        }
+function setState(r, s, since){
+  const o = A[r], prev = o.s; if (prev === s) return;
+  o.s = s; o.since = (s==="alert"||s==="warn") ? (since || new Date()) : null;
+  if (s==="alert") today++;
+  if (s!=="unk" && !(prev==="unk" && s==="calm")){ feed.unshift({t:new Date(), r, s}); feed = feed.slice(0,30); }
+}
 
-        function renderAll() {
-            const regSel = document.getElementById('region-select');
-            if (!regSel) return;
-            const reg = regSel.value;
-            const locTitle = selectedCity ? `${selectedCity} (${reg})` : (reg || 'Україна');
+// ===== Рендер =====
+function render(){
+  const my = $("my"); my.className = "card " + (myRegion ? A[myRegion].s : "");
+  if (!myRegion) my.innerHTML = '<h2>Моя область</h2><p class="empty">Оберіть область у налаштуваннях.</p><button onclick="openSet()">⚙ Обрати область</button>';
+  else { const o = A[myRegion];
+    my.innerHTML = '<h2>Моя область</h2><div class="big">'+myRegion+'</div>'
+      +'<div class="st">'+word(o.s)+'</div>'
+      +(o.since ? '<div class="m">Початок: '+hm(o.since)+' · Тривалість: <b id="dur">'+dur(Date.now()-o.since)+'</b></div>' : '<div class="m">'+(o.s==="unk"?"Статус невідомий — орієнтуйтесь на сирени та офіційні застосунки.":"Тривоги немає за даними джерел.")+'</div>')
+      +(myCity ? '<div class="m">Населений пункт: '+myCity+'</div>' : ''); }
 
-            const card = document.getElementById('my-location-card');
-            const titleEl = document.getElementById('my-location-title');
-            const badgeEl = document.getElementById('my-location-badge');
-            const descEl = document.getElementById('my-location-desc');
+  const act = REG.filter(r => r!==myRegion && (A[r].s==="alert"||A[r].s==="warn"));
+  const ac = $("act"); ac.innerHTML = "<h2>Активні області ("+act.length+")</h2>";
+  if (!act.length) ac.insertAdjacentHTML("beforeend",'<p class="empty">Інших активних областей немає.</p>');
+  act.forEach(r => { const d = document.createElement("div"); d.className="row";
+    d.innerHTML = "<span>"+(A[r].s==="alert"?"🔴":"🟡")+" "+lab(r)+"</span><span class='m'>"+dur(Date.now()-A[r].since)+"</span>";
+    d.onclick = () => { sel = r; render(); }; ac.appendChild(d); });
 
-            titleEl.innerText = locTitle;
-            const statusData = airAlerts[reg] || { code: 'green', text: 'ТИША' };
-            
-            if (statusData.code === 'red') {
-                card.className = 'status-card red';
-                badgeEl.className = 'status-badge badge-red';
-                badgeEl.innerText = 'ТРИВОГА';
-                descEl.innerText = threatDetails[reg] || '⚠️ Оголошено повітряну тривогу в області!';
-            } else {
-                card.className = 'status-card';
-                badgeEl.className = 'status-badge badge-green';
-                badgeEl.innerText = 'ТИША';
-                descEl.innerText = '✅ Повітряний простір спокійний.';
-            }
+  const g = $("grid"); g.innerHTML = "";
+  for (let r=0;r<5;r++) for (let c=0;c<7;c++){
+    const m = MAP.find(x => x[1]===r && x[2]===c), d = document.createElement("button"); d.type="button";
+    if (!m){ d.className="t e"; d.disabled=true; }
+    else { d.className = "t "+A[m[0]].s+(m[0]===myRegion?" me":""); d.textContent = m[3]||lab(m[0]); d.title = m[0]; d.onclick = () => { sel = m[0]; render(); }; }
+    g.appendChild(d);
+  }
+  const dt = $("det");
+  if (sel){ const o = A[sel]; dt.innerHTML = "<b>"+sel+"</b><br>"+word(o.s)+(o.since?"<br><span class='m'>Початок "+hm(o.since)+" · "+dur(Date.now()-o.since)+"</span>":""); }
 
-            const tickerList = document.getElementById('ticker-list');
-            tickerList.innerHTML = '';
+  $("fl").innerHTML = feed.length ? feed.slice(0,8).map(f => "<div class='feedrow'><b>"+hm(f.t)+"</b><span>"+lab(f.r)+" — "+(f.s==="alert"?"тривога":f.s==="warn"?"попередження":"відбій")+"</span></div>").join("") : "<p class='empty'>Подій поки немає.</p>";
 
-            let activeAlertsFound = false;
-            for (const rName in airAlerts) {
-                if (airAlerts[rName].code === 'red') {
-                    activeAlertsFound = true;
-                    const detailText = threatDetails[rName] || "Повітряна тривога! Загроза застосування засобів ураження.";
-                    const nowStr = new Date().toLocaleTimeString();
+  const n = REG.filter(r => A[r].s==="alert"||A[r].s==="warn").length, nc = REG.filter(r => A[r].s==="calm").length;
+  $("kpi").innerHTML = "<div>"+today+"<span>тривог сьогодні</span></div><div>"+n+"<span>активних зараз</span></div><div>"+nc+"<span>областей у нормі</span></div>";
+  $("upd").textContent = "Оновлено: "+lastUpd.toLocaleTimeString("uk-UA")+" · оновлення кожні 5 с"; banner();
+  $("chips").innerHTML = [["alerts.in.ua","alerts_in_ua"],["Telegram","telegram"],["Сервер","api"]].map(([t,k]) => '<span class="chip '+(srcs[k]?"":"off")+'"><span class="dot"></span>'+t+'</span>').join("");
+}
 
-                    const item = document.createElement('div');
-                    item.className = 'ticker-item';
-                    item.innerHTML = `
-                        <div class="ticker-region">
-                            <span>🚨 ${rName}</span>
-                            <span class="ticker-time">${nowStr}</span>
-                        </div>
-                        <div class="ticker-text">${detailText}</div>
-                    `;
-                    tickerList.appendChild(item);
-                }
-            }
+function tick(){ $("clk").textContent = new Date().toLocaleTimeString("uk-UA");
+  const d = $("dur"); if (d && myRegion && A[myRegion].since) d.textContent = dur(Date.now()-A[myRegion].since); }
+setInterval(tick,1000); tick();
 
-            if (!activeAlertsFound) {
-                const item = document.createElement('div');
-                item.className = 'ticker-item';
-                item.style.borderLeftColor = 'var(--accent-green)';
-                item.style.color = 'var(--accent-green)';
-                item.innerHTML = `
-                    <div class="ticker-region">
-                        <span>🟢 УСІ ОБЛАСТІ</span>
-                        <span class="ticker-time">${new Date().toLocaleTimeString()}</span>
-                    </div>
-                    <div class="ticker-text" style="color: var(--accent-green);">Активні тривоги відсутні. Спокійно.</div>
-                `;
-                tickerList.appendChild(item);
-            }
-        }
+// ===== Дані: API або демо =====
+async function poll(){
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 4000);
+  try { const j = await (await fetch(API_URL, {cache:"no-store", signal:ac.signal})).json();
+    if (!j._sources) throw 0;
+    REG.forEach(r => { const v = j[r]; if (v) setState(r, v.state, v.since ? new Date(v.since) : null); else setState(r, "unk"); });
+    srcs = Object.assign({api:true}, j._sources); if (j._today != null) today = j._today;
+    lastGood = Date.now(); lastUpd = new Date(); stale = false;
+  } catch(e){ srcs = {alerts_in_ua:false, telegram:false, api:false}; }
+  clearTimeout(to); render();
+}
+function checkStale(){ // немає свіжих даних 15 с — показуємо «невідомо», а не «тиша»
+  if (!stale && Date.now() - lastGood > 15000){ stale = true; REG.forEach(r => setState(r,"unk")); srcs = {alerts_in_ua:false, telegram:false, api:false}; render(); }
+}
+function banner(){ const b = $("bn"); let t = "";
+  if (!API_URL) t = "ДЕМО-ДАНІ: це не реальні тривоги";
+  else if (stale) t = "⚠ Немає свіжих даних — статуси невідомі. Орієнтуйтесь на сирени та офіційні застосунки.";
+  b.textContent = t; b.style.display = t ? "block" : "none"; }
+function demo(){
+  REG.forEach(r => { A[r].s = "calm"; });
+  srcs = {alerts_in_ua:true, telegram:true, api:true};
+  REG.filter(()=>Math.random()<.18).forEach(r => setState(r,"alert",new Date(Date.now()-Math.random()*1.2e6)));
+  feed = []; today = REG.filter(r=>A[r].s==="alert").length + 36;
+  setInterval(() => { const r = REG[Math.random()*REG.length|0], o = A[r];
+    setState(r, o.s==="calm" ? (Math.random()<.8?"alert":"warn") : "calm"); lastUpd = new Date(); render(); }, 7000);
+}
+if (API_URL){ poll(); setInterval(poll,5000); setInterval(checkStale,1000); } else { demo(); }
 
-        async function fetchLiveAlerts() {
-            try {
-                const res = await fetch('/api/live-status');
-                if (!res.ok) throw new Error('Server error');
-                const data = await res.json();
-                if (!data || !data.regions_db) return;
-                
-                globalDb = data.regions_db;
-                airAlerts = data.air_alerts || {};
-                threatDetails = data.threat_details || {};
-                
-                if (!isInitialized) {
-                    initSelectors();
-                } else {
-                    renderAll();
-                }
-                const now = new Date();
-                document.getElementById('update-time').innerText = `LIVE ${now.toLocaleTimeString()}`;
-            } catch (e) {
-                console.log("Помилка зв'язку:", e);
-                document.getElementById('update-time').innerText = "ОФЛАЙН";
-            }
-        }
+// ===== Налаштування і автодоповнення =====
+const dlg = $("dlg"), city = $("city"), sug = $("sug"); let idx = -1;
+$("obl").innerHTML = REG.filter(r=>r!=="м. Київ").concat("м. Київ").map(r => "<option>"+r+"</option>").join("");
+function info(){ const o=$("obl").value, n=(DB[o]||[]).length;
+  $("dbinfo").textContent = o==="м. Київ" ? "Для Києва вибір НП не потрібен." : (fullDb ? "Завантажена база: "+n+" НП у цій області." : "Вбудований короткий список ("+n+" НП). Завантажте повну базу нижче.");
+  city.disabled = o==="м. Київ"; }
+function openSet(){ $("obl").value = myRegion || REG[0]; city.value = myCity; info(); hide(); dlg.showModal(); }
+function hide(){ sug.style.display="none"; idx=-1; }
+function suggest(){
+  const q = city.value.trim().toLowerCase(), list = DB[$("obl").value]||[]; sug.innerHTML = ""; idx = -1;
+  if (!q) return hide();
+  const res = list.filter(x => x.toLowerCase().startsWith(q)).concat(list.filter(x => !x.toLowerCase().startsWith(q) && x.toLowerCase().includes(q))).slice(0,8);
+  if (!res.length) return hide();
+  res.forEach(x => { const d = document.createElement("div"); d.textContent = x;
+    d.onmousedown = e => { e.preventDefault(); city.value = x; hide(); }; sug.appendChild(d); });
+  sug.style.display = "block";
+}
+city.oninput = suggest;
+city.onkeydown = e => { const it = [...sug.children]; if (!it.length) return;
+  if (e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); idx = (idx+(e.key==="ArrowDown"?1:-1)+it.length)%it.length; it.forEach((x,i)=>x.classList.toggle("on",i===idx)); }
+  else if (e.key==="Enter" && idx>=0){ e.preventDefault(); city.value = it[idx].textContent; hide(); }
+  else if (e.key==="Escape") hide(); };
+city.onblur = () => setTimeout(hide,100);
+$("obl").onchange = () => { city.value=""; info(); hide(); };
+$("setBtn").onclick = openSet; $("cancel").onclick = () => dlg.close();
+$("save").onclick = () => { myRegion = $("obl").value; myCity = city.value.trim(); sel = null;
+  try { localStorage.setItem("vs_region",myRegion); localStorage.setItem("vs_city",myCity); } catch(e){}
+  dlg.close(); render(); };
+$("file").onchange = async e => { const f = e.target.files[0]; if (!f) return;
+  const t = await f.text(), nd = {};
+  try { if (f.name.endsWith(".json")) Object.assign(nd, JSON.parse(t));
+    else t.split(/\r?\n/).forEach(l => { const i = l.indexOf(";"); if (i>0){ const o=l.slice(0,i).trim(), n=l.slice(i+1).trim(); if (o && n) (nd[o] = nd[o]||[]).push(n); } });
+    for (const k of Object.keys(nd)) if (/Луганськ|Крим/.test(k)) delete nd[k];
+    for (const k in nd) nd[k] = [...new Set(nd[k])].sort((a,b)=>a.localeCompare(b,"uk"));
+    if (!Object.keys(nd).length) throw 0;
+    DB = nd; fullDb = true;
+    try { localStorage.setItem("vs_db", JSON.stringify(DB)); } catch(e){}
+    info();
+  } catch(err){ $("dbinfo").textContent = "Не вдалося прочитати файл. Перевірте формат."; } };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchLiveAlerts();
-            setInterval(fetchLiveAlerts, 4000);
-        });
-    </script>
+fetch("settlements.json",{cache:"no-store"}).then(r => r.ok ? r.json() : null).then(j => { if (j){ DB = j; fullDb = true; info(); } }).catch(()=>{});
+render();
+if (!myRegion) openSet();
+</script>
 </body>
 </html>
