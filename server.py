@@ -154,7 +154,6 @@ HTML_CONTENT = """<!DOCTYPE html>
             gap: 10px;
         }
 
-        /* Верхня частина: 2 колонки */
         .top-section {
             display: flex;
             gap: 10px;
@@ -191,7 +190,6 @@ HTML_CONTENT = """<!DOCTYPE html>
         .badge-red { background: var(--accent-red); color: #fff; }
         .badge-green { background: var(--accent-green); color: #000; }
 
-        /* Нижня секція: розділена на 2 стовпці (зліва порожньо або доп. інфо, справа термінал активних тривог) */
         .bottom-split {
             display: flex;
             gap: 10px;
@@ -261,7 +259,6 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
 
     <div class="main-container">
-        <!-- ВЕРХНЯ СЕКЦІЯ: 2 КОЛОНКИ -->
         <div class="top-section">
             <div class="top-left">
                 <div class="select-group">
@@ -292,7 +289,6 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- НИЖНЯ СЕКЦІЯ: РОЗДІЛЕНА НАПІВНИЦЮ (СПРАВА ТЕРМІНАЛ ТРИВОГ) -->
         <div class="bottom-split">
             <div class="bottom-left-pane">
                 <div>🛡️ Система працює в автономному режимі. Перевірка дублюючих каналів активна.</div>
@@ -376,7 +372,6 @@ HTML_CONTENT = """<!DOCTYPE html>
             const reg = regSel.value;
             const locTitle = selectedCity ? `${selectedCity} (${reg})` : (reg || 'Україна');
 
-            // 1. Верхня статична картка
             const card = document.getElementById('my-location-card');
             const titleEl = document.getElementById('my-location-title');
             const badgeEl = document.getElementById('my-location-badge');
@@ -397,7 +392,6 @@ HTML_CONTENT = """<!DOCTYPE html>
                 descEl.innerText = '✅ Повітряний простір спокійний.';
             }
 
-            // 2. Права нижня панель: виводимо ТІЛЬКИ ті області, де зараз реальна ТРИВОГА
             const tickerList = document.getElementById('ticker-list');
             tickerList.innerHTML = '';
 
@@ -510,23 +504,4 @@ async def get_live_status():
                     for reg in REGIONS_DATABASE.keys():
                         is_active = any(r in reg for r in active_regions)
                         if is_active:
-                            air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
-                        else:
-                            air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
-                    success_fetched = True
-                    break
-            except Exception:
-                continue
-
-    if not success_fetched:
-        for reg in REGIONS_DATABASE.keys():
-            air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
-
-    return {
-        "regions_db": REGIONS_DATABASE,
-        "air_alerts": air_alerts_map,
-        "threat_details": threat_details_map
-    }
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000
+                            air_alerts_map[reg] = {"code": "red", "
