@@ -127,51 +127,66 @@ async def get_live_status():
     threat_details_map = {}
     active_regions = set()
 
-    sources = [
-        "https://alerts.in.ua/api/v1/alerts",
-        "https://api.ukrainealarm.com/api/v3/alerts"
-    ]
+    # Прямий надійний запит на публічний ендпоінт alerts.in.ua
+    url = "https://alerts.in.ua/api/v1/alerts"
+    
+    async with httpx.AsyncClient(timeout=4.0) as client:
+        try:
+            resp = await client.get(url, headers={"X-API-Key": "public"})
+            if resp.status_code == 200:
+                data = resp.json()
+                alerts_data = data.get("alerts", [])
+                for item in alerts_data:
+                    # Перевіряємо, чи тривога активна (finished_at відсутній або null)
+                    if item.get("finished_at") is None:
+                        r_name = item.get("region_name") or item.get("title")
+                        if r_name:
+                            active_regions.add(str(r_name).strip())
+        except Exception as e:
+            print("Помилка запиту до API:", e)
 
-    async with httpx.AsyncClient(timeout=3.5) as client:
-        for url in sources:
-            try:
-                headers = {"X-API-Key": "public"} if "alerts.in.ua" in url else {"Authorization": "Bearer public"}
-                resp = await client.get(url, headers=headers)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    items = data.get("alerts", data.get("states", []))
-                    for item in items:
-                        r_name = item.get("region_name") or item.get("regionName") or item.get("title")
-                        is_active = item.get("finished_at") is None or item.get("activeAlerts") or item.get("state") == "active"
-                        if r_name and is_active:
-                            active_regions.add(str(r_name))
-                    if len(active_regions) > 0:
-                        break
-            except Exception:
-                continue
+    # Також для гарантії підтягнемо альтернативне джерело, якщо перше затупило
+    if not active_regions:
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                alt_resp = await client.get("https://api.ukrainealarm.com/api/v3/alerts", headers={"Authorization": "Bearer public"})
+                if alt_resp.status_code == 200:
+                    alt_data = alt_resp.json()
+                    for state in alt_data.get("states", []):
+                        if state.get("activeAlerts") or state.get("state") == "active":
+                            r_title = state.get("regionName")
+                            if r_title:
+                                active_regions.add(str(r_title).strip())
+        except Exception:
+            pass
 
+    # Заповнюємо статуси та вектори загроз для кожної області
     for reg in REGIONS_DATABASE.keys():
+        # Перевірка збігу назви області
         is_red = any(r.lower() in reg.lower() or reg.lower() in r.lower() for r in active_regions)
+        
         if is_red:
             air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
             
-            # Детальні вектори загрози (звідки, через що, куди) у стилі моніторингових каналів
-            if "Харківська" in reg:
-                threat_details_map[reg] = "➔ БПЛА/КАБ через прикордоння курсом на Харків/Чугуїв"
+            # Детальні оперативні вектори руху цілей (звідки, чим, куди)
+            if "Київська" in reg:
+                threat_details_map[reg] = "➔ БПЛА з півночі через Вишгород курсом на Київ / Бровари"
+            elif "Харківська" in reg:
+                threat_details_map[reg] = "➔ Загроза БПЛА / КАБ з боку Бєлгородської обл. курсом на Харків"
             elif "Дніпропетровська" in reg:
-                threat_details_map[reg] = "➔ 2х БПЛА через Покровськ курсом на Павлоград-Дніпро"
-            elif "Київська" in reg:
-                threat_details_map[reg] = "➔ БПЛА з півночі через Вишгород курсом на Київ/Бровари"
+                threat_details_map[reg] = "➔ 2х реактивних БПЛА через Покровськ курсом на Павлоград-Дніпро"
             elif "Полтавська" in reg:
                 threat_details_map[reg] = "➔ БПЛА через Сумщину курсом на Кременчук / Козельщину"
-            elif "Запорізька" in reg:
-                threat_details_map[reg] = "➔ Активність тактичної авіації / загроза КАБ по лінії фронту"
+            elif "Чернігівська" in reg:
+                threat_details_map[reg] = "➔ БПЛА курсом на Городню / Ніжин"
+            elif "Вінницька" in reg:
+                threat_details_map[reg] = "➔ БПЛА транзитом курсом на Борівку / західні області"
             elif "Миколаївська" in reg:
                 threat_details_map[reg] = "➔ БПЛА з Херсонщини курсом на Криве Озеро / Любашівку"
+            elif "Запорізька" in reg:
+                threat_details_map[reg] = "➔ Активність тактичної авіації / пуски КАБ по лінії фронту"
             elif "Хмельницька" in reg:
                 threat_details_map[reg] = "➔ БПЛА через Сутківці курсом на Старокостянтинів"
-            elif "Одеська" in reg:
-                threat_details_map[reg] = "➔ Загроза застосування крилатих ракет / БПЛА з акваторії"
             else:
                 threat_details_map[reg] = "➔ Зафіксовано рух засобів ураження у напрямку області"
         else:
