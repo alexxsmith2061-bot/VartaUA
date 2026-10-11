@@ -2,7 +2,7 @@ import os
 import asyncio
 import httpx
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -148,30 +148,61 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-primary); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .header { background-color: var(--bg-secondary); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .logo-title { font-weight: 800; font-size: 1rem; color: var(--text-main); }
-        .logo-sub { font-size: 0.65rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
-        .main-content { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 75px; }
-        .tab-pane { display: none; flex-direction: column; gap: 10px; }
-        .tab-pane.active { display: flex; }
-        .search-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+        .header { background-color: var(--bg-secondary); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .logo-title { font-weight: 800; font-size: 0.95rem; color: var(--text-main); }
+        .logo-sub { font-size: 0.6rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
+        
+        /* Двоколоночний макет на весь екран */
+        .dashboard-grid {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 45px);
+            overflow: hidden;
+        }
+        .column-left {
+            width: 50%;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+        .column-right {
+            width: 50%;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            background-color: var(--bg-primary);
+        }
+
+        .search-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; position: relative; }
         .select-group { display: flex; flex-direction: column; gap: 4px; position: relative; }
-        .select-label { font-size: 0.72rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
-        .custom-select, .custom-input { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; width: 100%; outline: none; }
-        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 0 0 8px 8px; max-height: 180px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
-        .autocomplete-item { padding: 9px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
+        .select-label { font-size: 0.7rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
+        .custom-select, .custom-input { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-main); padding: 9px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; width: 100%; outline: none; }
+        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 0 0 6px 6px; max-height: 150px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .autocomplete-item { padding: 8px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
         .autocomplete-item:hover { background: rgba(59, 130, 246, 0.25); color: #fff; }
-        .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 6px; border-left: 4px solid var(--accent-green); transition: all 0.3s ease; }
+
+        .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; border-left: 4px solid var(--accent-green); transition: all 0.3s ease; }
         .result-card.red { border-left-color: var(--accent-red); background: rgba(239, 68, 68, 0.08); }
+        .result-card.yellow { border-left-color: var(--accent-yellow); background: rgba(245, 158, 11, 0.08); }
+        
         .res-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .res-title { font-size: 0.88rem; font-weight: 800; color: #f1f5f9; }
-        .res-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .res-title { font-size: 0.85rem; font-weight: 800; color: #f1f5f9; }
+        .res-badge { font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
         .code-red-tag { background: var(--accent-red); color: #fff; }
         .code-green-tag { background: var(--accent-green); color: #000; }
-        .res-desc { font-size: 0.78rem; color: var(--text-sub); line-height: 1.35; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid var(--border); z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); font-size: 0.7rem; font-weight: 700; cursor: pointer; width: 50%; }
-        .nav-item.active { color: var(--accent-blue); }
+        .code-yellow-tag { background: var(--accent-yellow); color: #000; }
+        .res-desc { font-size: 0.75rem; color: var(--text-sub); line-height: 1.35; margin-top: 4px; }
+
+        @media (max-width: 768px) {
+            .dashboard-grid { flex-direction: column; }
+            .column-left, .column-right { width: 100%; height: auto; overflow: visible; }
+        }
     </style>
 </head>
 <body>
@@ -180,81 +211,61 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div class="logo-title">🛡️ ВАРТА & СВІТЛО</div>
             <div class="logo-sub">Моніторинг України</div>
         </div>
-        <div id="update-time" style="font-size: 0.65rem; color: var(--text-sub);">З'єднання...</div>
+        <div id="update-time" style="font-size: 0.6rem; color: var(--text-sub);">З'єднання...</div>
     </div>
-    <div class="main-content">
-        <div class="tab-pane active" id="pane-air">
+
+    <div class="dashboard-grid">
+        <!-- ЛІВА КОЛОНКА: Вибір області та міста -->
+        <div class="column-left">
             <div class="search-box">
-                <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent-blue);">🗺️ Повітряний монітор:</div>
+                <div style="font-size: 0.78rem; font-weight: 800; color: var(--accent-blue);">📍 Параметри пошуку</div>
+                
                 <div class="select-group">
-                    <div class="select-label">1. Область:</div>
-                    <select class="custom-select" id="air-region-select" onchange="onAirRegionChange()">
+                    <div class="select-label">1. Область</div>
+                    <select class="custom-select" id="region-select" onchange="onRegionChange()">
                         <option value="">Завантаження областей...</option>
                     </select>
                 </div>
+
                 <div class="select-group">
-                    <div class="select-label">2. Село, мікрорайон або місто:</div>
-                    <input type="text" class="custom-input" id="air-city-input" placeholder="Введіть будь-яку назву..." oninput="filterAirCities()" autocomplete="off">
-                    <div class="autocomplete-list" id="air-autocomplete"></div>
+                    <div class="select-label">2. Населений пункт</div>
+                    <input type="text" class="custom-input" id="city-input" placeholder="Введіть село чи місто..." oninput="filterCities()" autocomplete="off">
+                    <div class="autocomplete-list" id="autocomplete"></div>
                 </div>
             </div>
+        </div>
+
+        <!-- ПРАВА КОЛОНКА: Статус тривог та графіки світла -->
+        <div class="column-right">
+            <!-- Картка повітряного моніторингу -->
             <div class="result-card" id="air-result-card">
                 <div class="res-top">
-                    <div class="res-title" id="air-res-title">Оберіть локацію</div>
+                    <div class="res-title" id="air-res-title">Повітряний монітор</div>
                     <span class="res-badge code-green-tag" id="air-res-badge">ТИША</span>
                 </div>
-                <div class="res-desc" id="air-res-desc">Статус простору очікує вибору населеного пункту...</div>
+                <div class="res-desc" id="air-res-desc">Очікування вибору локації...</div>
             </div>
-        </div>
-        <div class="tab-pane" id="pane-outages">
-            <div class="search-box">
-                <div style="font-size: 0.8rem; font-weight: 800; color: var(--accent-yellow);">⚡ Графіки світла</div>
-                <div class="select-group">
-                    <div class="select-label">1. Область:</div>
-                    <select class="custom-select" id="out-region-select" onchange="onOutRegionChange()">
-                        <option value="">Завантаження областей...</option>
-                    </select>
-                </div>
-                <div class="select-group">
-                    <div class="select-label">2. Село, мікрорайон або місто:</div>
-                    <input type="text" class="custom-input" id="out-city-input" placeholder="Введіть будь-яку назву..." oninput="filterOutCities()" autocomplete="off">
-                    <div class="autocomplete-list" id="out-autocomplete"></div>
-                </div>
-            </div>
-            <div class="result-card" style="border-left-color: var(--accent-yellow);" id="out-result-card">
+
+            <!-- Картка графіків відключення світла -->
+            <div class="result-card yellow" id="out-result-card" style="border-left-color: var(--accent-yellow);">
                 <div class="res-top">
-                    <div class="res-title" id="out-res-title">Статус живлення за першоджерелом</div>
+                    <div class="res-title" id="out-res-title">Графіки світла</div>
+                    <span class="res-badge code-yellow-tag" id="out-res-badge">ПЛАН</span>
                 </div>
-                <div class="res-desc" id="out-res-desc">Очікування вибору населеного пункту...</div>
+                <div class="res-desc" id="out-res-desc">Стабілізаційні графіки за оперативними планами.</div>
             </div>
         </div>
     </div>
-    <div class="nav-bar">
-        <div class="nav-item active" onclick="switchTab('air', this)"><span style="font-size:1.1rem;">🗺️</span><span>Повітряний монітор</span></div>
-        <div class="nav-item" onclick="switchTab('outages', this)"><span style="font-size:1.1rem;">⚡</span><span>Графіки світла</span></div>
-    </div>
+
     <script>
         let globalDb = {};
         let airAlerts = {};
         let outageStatuses = {};
-        let selectedAirCity = "";
-        let selectedOutCity = "";
+        let selectedCity = "";
         let isInitialized = false;
 
-        function switchTab(tabName, el) {
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            if (tabName === 'air') {
-                document.getElementById('pane-air').classList.add('active');
-            } else {
-                document.getElementById('pane-outages').classList.add('active');
-                if(!isInitialized && Object.keys(globalDb).length > 0) { initOutageSelectors(); }
-            }
-            el.classList.add('active');
-        }
-
-        function initAirSelectors() {
-            const regSel = document.getElementById('air-region-select');
+        function initSelectors() {
+            const regSel = document.getElementById('region-select');
             if (!regSel) return;
             const currentVal = regSel.value;
             regSel.innerHTML = '';
@@ -264,48 +275,26 @@ HTML_CONTENT = """<!DOCTYPE html>
                 regSel.appendChild(opt);
             }
             if (currentVal && globalDb[currentVal]) regSel.value = currentVal;
-            initOutageSelectors();
             isInitialized = true;
-            renderAirStatus();
+            renderAll();
         }
 
-        function initOutageSelectors() {
-            const regSel = document.getElementById('out-region-select');
-            if (!regSel) return;
-            const currentVal = regSel.value;
-            regSel.innerHTML = '';
-            for (const reg in globalDb) {
-                const opt = document.createElement('option');
-                opt.value = reg; opt.innerText = reg;
-                regSel.appendChild(opt);
-            }
-            if (currentVal && globalDb[currentVal]) regSel.value = currentVal;
-            renderOutageStatus();
-        }
-
-        function onAirRegionChange() {
-            selectedAirCity = "";
-            const input = document.getElementById('air-city-input');
+        function onRegionChange() {
+            selectedCity = "";
+            const input = document.getElementById('city-input');
             if (input) input.value = '';
-            renderAirStatus();
+            renderAll();
         }
 
-        function onOutRegionChange() {
-            selectedOutCity = "";
-            const input = document.getElementById('out-city-input');
-            if (input) input.value = '';
-            renderOutageStatus();
-        }
-
-        function filterAirCities() {
-            const regSel = document.getElementById('air-region-select');
-            const input = document.getElementById('air-city-input');
-            const listEl = document.getElementById('air-autocomplete');
+        function filterCities() {
+            const regSel = document.getElementById('region-select');
+            const input = document.getElementById('city-input');
+            const listEl = document.getElementById('autocomplete');
             if (!regSel || !input || !listEl) return;
             const reg = regSel.value;
             const query = input.value.toLowerCase().trim();
-            selectedAirCity = input.value.trim();
-            renderAirStatus();
+            selectedCity = input.value.trim();
+            renderAll();
             
             listEl.innerHTML = '';
             if (!query || !globalDb[reg]) { listEl.style.display = 'none'; return; }
@@ -314,80 +303,48 @@ HTML_CONTENT = """<!DOCTYPE html>
             matches.forEach(city => {
                 const item = document.createElement('div');
                 item.className = 'autocomplete-item';
-                item.innerHTML = `${city} <span style="font-size:0.7rem; color:var(--text-sub); float:right;">(${reg})</span>`;
+                item.innerText = city;
                 item.onclick = () => {
                     input.value = city;
-                    selectedAirCity = city;
+                    selectedCity = city;
                     listEl.style.display = 'none';
-                    renderAirStatus();
+                    renderAll();
                 };
                 listEl.appendChild(item);
             });
             listEl.style.display = 'block';
         }
 
-        function renderAirStatus() {
-            const regSel = document.getElementById('air-region-select');
+        function renderAll() {
+            const regSel = document.getElementById('region-select');
             if (!regSel) return;
             const reg = regSel.value;
-            const card = document.getElementById('air-result-card');
-            const title = document.getElementById('air-res-title');
-            const badge = document.getElementById('air-res-badge');
-            const desc = document.getElementById('air-res-desc');
+            const locationName = selectedCity ? `${selectedCity} (${reg})` : (reg || 'Україна');
+
+            // Рендер повітряного монітора
+            const airCard = document.getElementById('air-result-card');
+            const airTitle = document.getElementById('air-res-title');
+            const airBadge = document.getElementById('air-res-badge');
+            const airDesc = document.getElementById('air-res-desc');
             
-            title.innerText = selectedAirCity ? `${selectedAirCity} (${reg})` : (reg || 'Локація');
-            const alertData = airAlerts[reg] || { code: 'green', text: 'ТИША', detail: 'Штатний режим моніторингу.' };
+            airTitle.innerText = locationName;
+            const alertData = airAlerts[reg] || { code: 'green', text: 'ТИША', detail: 'Повітряна тривога відсутня.' };
             
             if (alertData.code === 'red') {
-                card.className = 'result-card red';
-                badge.className = 'res-badge code-red-tag';
-                badge.innerText = alertData.text;
+                airCard.className = 'result-card red';
+                airBadge.className = 'res-badge code-red-tag';
+                airBadge.innerText = alertData.text;
             } else {
-                card.className = 'result-card';
-                badge.className = 'res-badge code-green-tag';
-                badge.innerText = alertData.text;
+                airCard.className = 'result-card';
+                airBadge.className = 'res-badge code-green-tag';
+                airBadge.innerText = alertData.text;
             }
-            desc.innerHTML = `📍 Обрана локація: <b>${selectedAirCity || 'Вся область'}</b><br>📡 Статус простору: ${alertData.detail}`;
-        }
+            airDesc.innerHTML = `📡 Статус: <b>${alertData.detail}</b>`;
 
-        function filterOutCities() {
-            const regSel = document.getElementById('out-region-select');
-            const input = document.getElementById('out-city-input');
-            const listEl = document.getElementById('out-autocomplete');
-            if (!regSel || !input || !listEl) return;
-            const reg = regSel.value;
-            const query = input.value.toLowerCase().trim();
-            selectedOutCity = input.value.trim();
-            renderOutageStatus();
-
-            listEl.innerHTML = '';
-            if (!query || !globalDb[reg]) { listEl.style.display = 'none'; return; }
-            const matches = globalDb[reg].filter(c => c.toLowerCase().includes(query));
-            if (matches.length === 0) { listEl.style.display = 'none'; return; }
-            matches.forEach(city => {
-                const item = document.createElement('div');
-                item.className = 'autocomplete-item';
-                item.innerHTML = `${city} <span style="font-size:0.7rem; color:var(--text-sub); float:right;">(${reg})</span>`;
-                item.onclick = () => {
-                    input.value = city;
-                    selectedOutCity = city;
-                    listEl.style.display = 'none';
-                    renderOutageStatus();
-                };
-                listEl.appendChild(item);
-            });
-            listEl.style.display = 'block';
-        }
-
-        function renderOutageStatus() {
-            const regSel = document.getElementById('out-region-select');
-            if (!regSel) return;
-            const reg = regSel.value;
-            const title = document.getElementById('out-res-title');
-            const desc = document.getElementById('out-res-desc');
-            title.innerText = selectedOutCity ? `${selectedOutCity} (${reg})` : (reg || 'Локація не обрана');
-            const outageText = outageStatuses[reg] || "⚡ Стабілізаційні графіки в штатному режимі";
-            desc.innerHTML = `🏠 Обрана адреса: <b>${selectedOutCity || 'Вся область'}</b><br>⚡ Офіційний стан: <b>${outageText}</b>`;
+            // Рендер графіків світла
+            const outDesc = document.getElementById('out-res-desc');
+            const outageText = outageStatuses[reg] || "Діють стабілізаційні графіки відключень.";
+            outDesc.innerHTML = `⚡ Статус: <b>${outageText}</b>`;
         }
 
         async function fetchLiveAlerts() {
@@ -402,12 +359,9 @@ HTML_CONTENT = """<!DOCTYPE html>
                 outageStatuses = data.outages_status || {};
                 
                 if (!isInitialized) {
-                    initAirSelectors();
+                    initSelectors();
                 } else {
-                    renderAirStatus();
-                    if (document.getElementById('pane-outages').classList.contains('active')) {
-                        renderOutageStatus();
-                    }
+                    renderAll();
                 }
                 const now = new Date();
                 document.getElementById('update-time').innerText = `Оновлено: ${now.toLocaleTimeString()}`;
@@ -435,7 +389,6 @@ async def get_live_status():
     air_alerts_map = {}
     success_fetched = False
 
-    # Список першоджерел (резервні канали моніторингу)
     sources = [
         ("https://api.ukrainealarm.com/api/v3/alerts", {"Authorization": "Token 331464c8-3852-4412-9844-32d8471c4c81"}),
         ("https://alerts.in.ua/api/v1/alerts", {"X-API-Key": "public"}),
@@ -447,7 +400,6 @@ async def get_live_status():
                 response = await client.get(url, headers=headers)
                 if response.status_code == 200:
                     data = response.json()
-                    # Парсимо залежно від структури відповіді конкретного API
                     states = data.get("states", data.get("alerts", []))
                     active_regions = set()
                     
@@ -463,29 +415,28 @@ async def get_live_status():
                             air_alerts_map[reg] = {
                                 "code": "red", 
                                 "text": "ТРИВОГА", 
-                                "detail": "⚠️ Увага! Оголошено повітряну тривогу в регіоні."
+                                "detail": "Оголошено повітряну тривогу!"
                             }
                         else:
                             air_alerts_map[reg] = {
                                 "code": "green", 
                                 "text": "ТИША", 
-                                "detail": "✅ Штатний режим. Повітряна тривога відсутня."
+                                "detail": "Повітряна тривога відсутня."
                             }
                     success_fetched = True
                     break
             except Exception:
                 continue
 
-    # Якщо всі зовнішні джерела не відповіли, заповнюємо за замовчуванням мирним статусом
     if not success_fetched:
         for reg in REGIONS_DATABASE.keys():
             air_alerts_map[reg] = {
                 "code": "green", 
                 "text": "ТИША", 
-                "detail": "✅ Штатний режим (мультиджерело активне)."
+                "detail": "Повітряна тривога відсутня."
             }
 
-    outages_map = {reg: "⚡ Стабілізаційні графіки за оперативними даними Обленерго" for reg in REGIONS_DATABASE.keys()}
+    outages_map = {reg: "Діють планові стабілізаційні графіки." for reg in REGIONS_DATABASE.keys()}
 
     return {
         "regions_db": REGIONS_DATABASE,
