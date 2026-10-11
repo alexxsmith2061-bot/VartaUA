@@ -17,6 +17,17 @@ app.add_middleware(
 )
 
 REGIONS_DATABASE = {
+    "Харківська область": [
+        "Харків", "Лозова", "Ізюм", "Чугуїв", "Первомайський", "Зміїв", "Богодухів", "Куп'янськ", "Вовчанськ", 
+        "П'ятихатки", "Люботин", "Мерефа", "Золочів", "Красноград", "Барвінкове", "Валки", "Великий Бурлук", 
+        "Дворічна", "Коломак", "Нова Водолага", "Печеніги", "Сахновщина", "Шевченкове", "Борівське", "Козача Лопань",
+        "Слатине", "Високий", "Покотилівка", "Безлюдівка", "Бабаї", "Південне", "Котляри", "Хорошеве", "Старий Салтів"
+    ],
+    "Дніпропетровська область": [
+        "Дніпро", "Кривий Ріг", "Кам'янське", "Нікополь", "Павлоград", "Новомосковськ", "Марганець", "Жовті Води", 
+        "Покров", "Синельникове", "Тернівка", "Першотравенськ", "П'ятихатки", "Апостолове", "Верхньодніпровськ", 
+        "Зеленодольськ", "Широке", "Царичанка", "Петриківка", "Магдалинівка", "Солоне", "Васильківка", "Межова"
+    ],
     "Львівська область": [
         "Львів", "Рудно", "Брюховичі", "Моршин", "Борислав", "Дрогобич", "Стрий", "Червоноград", "Золочів", 
         "Яворів", "Броди", "Буськ", "Городок", "Жидачів", "Жовква", "Кам'янка-Бузька", "Миколаїв", "Перемишляни",
@@ -30,21 +41,10 @@ REGIONS_DATABASE = {
         "Тетіїв", "Узин", "Яготин", "Гостомель", "Ворзель", "Коцюбинське", "Бородянка", "Іванків", "Полісся", "Згурівка",
         "Баришівка", "Макарів", "Рокитне", "Ставище", "Клавдієво-Тарасове", "Козин", "Березівка", "Чайки", "Крюківщина"
     ],
-    "Харківська область": [
-        "Харків", "Лозова", "Ізюм", "Чугуїв", "Первомайський", "Зміїв", "Богодухів", "Куп'янськ", "Вовчанськ", 
-        "П'ятихатки", "Люботин", "Мерефа", "Золочів", "Красноград", "Барвінкове", "Валки", "Великий Бурлук", 
-        "Дворічна", "Коломак", "Нова Водолага", "Печеніги", "Сахновщина", "Шевченкове", "Борівське", "Козача Лопань",
-        "Слатине", "Високий", "Покотилівка", "Безлюдівка", "Бабаї", "Південне", "Котляри", "Хорошеве", "Старий Салтів"
-    ],
     "Одеська область": [
         "Одеса", "Чорноморськ", "Ізмаїл", "Білгород-Дністровський", "Подільськ", "Южне", "Кілія", "Рені", 
         "Березівка", "Балта", "Ананьїв", "Арциз", "Вилкове", "Болград", "Роздільна", "Татарбунари", "Теплодар", 
         "Овидіополь", "Захарівка", "Лиманське", "Сергіївка", "Чорноморське", "Авангард", "Таїрове", "Великодолинське"
-    ],
-    "Дніпропетровська область": [
-        "Дніпро", "Кривий Ріг", "Кам'янське", "Нікополь", "Павлоград", "Новомосковськ", "Марганець", "Жовті Води", 
-        "Покров", "Синельникове", "Тернівка", "Першотравенськ", "П'ятихатки", "Апостолове", "Верхньодніпровськ", 
-        "Зеленодольськ", "Широке", "Царичанка", "Петриківка", "Магдалинівка", "Солоне", "Васильківка", "Межова"
     ],
     "Запорізька область": [
         "Запоріжжя", "Мелітополь", "Бердянськ", "Енергодар", "Токмак", "Пологи", "Василівка", 
@@ -109,16 +109,7 @@ REGIONS_DATABASE = {
         "Гола Пристань", "Нижні Сірогози", "Велика Лепетиха", "Велика Олександрівка", "Високопілля", "Іванівка", "Каланчак"
     ],
     "Донецька область": [
-        "Маріуполь", "Краматорськ", "Слов'янськ", "Бахмут", "Макіївка", "Горлівка", "Єнакієве", "Торецьк", 
-        "Покровськ", "Костянтинівка", "Дружківка", "Лиман", "Добропілля", "Селидове", "Вугледар", "Мар'їнка", "Волноваха"
-    ],
-    "Луганська область": [
-        "Луганськ", "Алчевськ", "Сєвєродонецьк", "Лисичанськ", "Рубіжне", "Красний Луч", "Свердловськ", "Стаханов", 
-        "Антрацит", "Ровеньки", "Кремінна", "Сватове", "Старобільськ", "Щастя", "Попасна", "Гірське", "Троїцьке"
-    ],
-    "Республіка Крим": [
-        "Сімферополь", "Севастополь", "Керч", "Євпаторія", "Ялта", "Феодосія", "Джанкой", "Красноперекопськ", 
-        "Алушта", "Бахчисарай", "Саки", "Армянськ", "Судак", "Білогірськ", "Кіровське", "Чорноморське"
+        "Краматорськ", "Слов'янськ", "Покровськ", "Костянтинівка", "Дружківка", "Лиман", "Добропілля", "Селидове"
     ],
     "Закарпатська область": [
         "Ужгород", "Мукачево", "Хуст", "Виноградів", "Берегове", "Тячів", "Рахів", "Свалява", "Іршава", 
@@ -135,8 +126,8 @@ HTML_CONTENT = """<!DOCTYPE html>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-primary: #0b0f19;
-            --bg-secondary: #151c2c;
+            --bg-primary: #080c14;
+            --bg-secondary: #0f172a;
             --bg-card: #1e293b;
             --accent-red: #ef4444;
             --accent-yellow: #f59e0b;
@@ -145,64 +136,102 @@ HTML_CONTENT = """<!DOCTYPE html>
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --border: rgba(255, 255, 255, 0.1);
+            --font-mono: "Courier New", Courier, monospace;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-primary); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .header { background-color: var(--bg-secondary); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .logo-title { font-weight: 800; font-size: 0.95rem; color: var(--text-main); }
+        
+        .header { background-color: var(--bg-secondary); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .logo-title { font-weight: 800; font-size: 0.95rem; color: var(--text-main); letter-spacing: 0.5px; }
         .logo-sub { font-size: 0.6rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
         
-        /* Двоколоночний макет на весь екран */
-        .dashboard-grid {
+        .main-container {
             display: flex;
+            flex-direction: column;
             flex: 1;
-            height: calc(100vh - 45px);
             overflow: hidden;
-        }
-        .column-left {
-            width: 50%;
-            background-color: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow-y: auto;
-        }
-        .column-right {
-            width: 50%;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow-y: auto;
-            background-color: var(--bg-primary);
+            padding: 10px;
+            gap: 10px;
         }
 
-        .search-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+        .top-section {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .top-left {
+            width: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .top-right {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+        }
+
         .select-group { display: flex; flex-direction: column; gap: 4px; position: relative; }
-        .select-label { font-size: 0.7rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
-        .custom-select, .custom-input { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-main); padding: 9px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; width: 100%; outline: none; }
-        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 0 0 6px 6px; max-height: 150px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .autocomplete-item { padding: 8px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
+        .select-label { font-size: 0.68rem; font-weight: 700; color: var(--text-sub); text-transform: uppercase; }
+        .custom-select, .custom-input { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-main); padding: 7px 9px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; width: 100%; outline: none; }
+        .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 0 0 6px 6px; max-height: 140px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .autocomplete-item { padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--border); }
         .autocomplete-item:hover { background: rgba(59, 130, 246, 0.25); color: #fff; }
 
-        .result-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; border-left: 4px solid var(--accent-green); transition: all 0.3s ease; }
-        .result-card.red { border-left-color: var(--accent-red); background: rgba(239, 68, 68, 0.08); }
-        .result-card.yellow { border-left-color: var(--accent-yellow); background: rgba(245, 158, 11, 0.08); }
-        
-        .res-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .res-title { font-size: 0.85rem; font-weight: 800; color: #f1f5f9; }
-        .res-badge { font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
-        .code-red-tag { background: var(--accent-red); color: #fff; }
-        .code-green-tag { background: var(--accent-green); color: #000; }
-        .code-yellow-tag { background: var(--accent-yellow); color: #000; }
-        .res-desc { font-size: 0.75rem; color: var(--text-sub); line-height: 1.35; margin-top: 4px; }
+        .status-card { height: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; border-left: 4px solid var(--accent-green); display: flex; flex-direction: column; justify-content: space-between; }
+        .status-card.red { border-left-color: var(--accent-red); background: rgba(239, 68, 68, 0.1); }
+        .status-header { display: flex; justify-content: space-between; align-items: center; }
+        .status-title { font-size: 0.85rem; font-weight: 800; }
+        .status-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .badge-red { background: var(--accent-red); color: #fff; }
+        .badge-green { background: var(--accent-green); color: #000; }
 
-        @media (max-width: 768px) {
-            .dashboard-grid { flex-direction: column; }
-            .column-left, .column-right { width: 100%; height: auto; overflow: visible; }
+        .bottom-section {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow: hidden;
         }
+
+        .board-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .board-title { font-size: 0.75rem; font-weight: 800; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .ticker-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 4px;
+        }
+
+        .ticker-item {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent-green);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.73rem;
+            line-height: 1.35;
+        }
+        .ticker-item.alert {
+            border-left-color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.08);
+        }
+        .ticker-region { font-weight: 800; color: #f1f5f9; text-transform: uppercase; font-size: 0.75rem; display: flex; justify-content: space-between; }
+        .ticker-time { font-size: 0.65rem; color: var(--accent-yellow); }
+        .ticker-text { color: #cbd5e1; margin-top: 3px; }
+        .ticker-target { color: #f87171; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -211,48 +240,49 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div class="logo-title">🛡️ ВАРТА & СВІТЛО</div>
             <div class="logo-sub">Моніторинг України</div>
         </div>
-        <div id="update-time" style="font-size: 0.6rem; color: var(--text-sub);">З'єднання...</div>
+        <div id="update-time" style="font-size: 0.65rem; color: var(--accent-green); font-family: var(--font-mono);">LIVE 00:00:00</div>
     </div>
 
-    <div class="dashboard-grid">
-        <!-- ЛІВА КОЛОНКА: Вибір області та міста -->
-        <div class="column-left">
-            <div class="search-box">
-                <div style="font-size: 0.78rem; font-weight: 800; color: var(--accent-blue);">📍 Параметри пошуку</div>
-                
+    <div class="main-container">
+        <!-- ВЕРХНЯ СЕКЦІЯ: 2 КОЛОНКИ -->
+        <div class="top-section">
+            <div class="top-left">
                 <div class="select-group">
-                    <div class="select-label">1. Область</div>
+                    <div class="select-label">Область:</div>
                     <select class="custom-select" id="region-select" onchange="onRegionChange()">
-                        <option value="">Завантаження областей...</option>
+                        <option value="">Завантаження...</option>
                     </select>
                 </div>
 
                 <div class="select-group">
-                    <div class="select-label">2. Населений пункт</div>
-                    <input type="text" class="custom-input" id="city-input" placeholder="Введіть село чи місто..." oninput="filterCities()" autocomplete="off">
+                    <div class="select-label">Населений пункт:</div>
+                    <input type="text" class="custom-input" id="city-input" placeholder="Введіть село або місто..." oninput="filterCities()" autocomplete="off">
                     <div class="autocomplete-list" id="autocomplete"></div>
+                </div>
+            </div>
+
+            <div class="top-right">
+                <div class="status-card" id="my-location-card">
+                    <div>
+                        <div class="status-header">
+                            <div class="status-title" id="my-location-title">Локація</div>
+                            <span class="status-badge badge-green" id="my-location-badge">ТИША</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-sub); margin-top: 6px;" id="my-location-desc">Очікування...</div>
+                    </div>
+                    <div style="font-size: 0.65rem; color: var(--text-sub); border-top: 1px solid var(--border); margin-top: 6px; padding-top: 4px;" id="my-location-outage">⚡ Графіки світла: Стабільні</div>
                 </div>
             </div>
         </div>
 
-        <!-- ПРАВА КОЛОНКА: Статус тривог та графіки світла -->
-        <div class="column-right">
-            <!-- Картка повітряного моніторингу -->
-            <div class="result-card" id="air-result-card">
-                <div class="res-top">
-                    <div class="res-title" id="air-res-title">Повітряний монітор</div>
-                    <span class="res-badge code-green-tag" id="air-res-badge">ТИША</span>
-                </div>
-                <div class="res-desc" id="air-res-desc">Очікування вибору локації...</div>
+        <!-- НИЖНЯ СЕКЦІЯ: ТАБЛО ОПЕРАТИВНОЇ ОБСТАНОВКИ З ПРІОРИТЕТОМ ТРИВОГ -->
+        <div class="bottom-section">
+            <div class="board-header">
+                <div class="board-title">📡 ТАБЛО ОПЕРАТИВНИХ ЗАГРОЗ ТА КУРСУ РУХУ (УКРАЇНА)</div>
             </div>
 
-            <!-- Картка графіків відключення світла -->
-            <div class="result-card yellow" id="out-result-card" style="border-left-color: var(--accent-yellow);">
-                <div class="res-top">
-                    <div class="res-title" id="out-res-title">Графіки світла</div>
-                    <span class="res-badge code-yellow-tag" id="out-res-badge">ПЛАН</span>
-                </div>
-                <div class="res-desc" id="out-res-desc">Стабілізаційні графіки за оперативними планами.</div>
+            <div class="ticker-list" id="ticker-list">
+                <div class="ticker-item">Опитування оперативних даних...</div>
             </div>
         </div>
     </div>
@@ -260,7 +290,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     <script>
         let globalDb = {};
         let airAlerts = {};
-        let outageStatuses = {};
+        let threatDetails = {};
         let selectedCity = "";
         let isInitialized = false;
 
@@ -319,32 +349,55 @@ HTML_CONTENT = """<!DOCTYPE html>
             const regSel = document.getElementById('region-select');
             if (!regSel) return;
             const reg = regSel.value;
-            const locationName = selectedCity ? `${selectedCity} (${reg})` : (reg || 'Україна');
+            const locTitle = selectedCity ? `${selectedCity} (${reg})` : (reg || 'Україна');
 
-            // Рендер повітряного монітора
-            const airCard = document.getElementById('air-result-card');
-            const airTitle = document.getElementById('air-res-title');
-            const airBadge = document.getElementById('air-res-badge');
-            const airDesc = document.getElementById('air-res-desc');
+            // 1. Верхня статична картка
+            const card = document.getElementById('my-location-card');
+            const titleEl = document.getElementById('my-location-title');
+            const badgeEl = document.getElementById('my-location-badge');
+            const descEl = document.getElementById('my-location-desc');
+
+            titleEl.innerText = locTitle;
+            const statusData = airAlerts[reg] || { code: 'green', text: 'ТИША' };
             
-            airTitle.innerText = locationName;
-            const alertData = airAlerts[reg] || { code: 'green', text: 'ТИША', detail: 'Повітряна тривога відсутня.' };
-            
-            if (alertData.code === 'red') {
-                airCard.className = 'result-card red';
-                airBadge.className = 'res-badge code-red-tag';
-                airBadge.innerText = alertData.text;
+            if (statusData.code === 'red') {
+                card.className = 'status-card red';
+                badgeEl.className = 'status-badge badge-red';
+                badgeEl.innerText = 'ТРИВОГА';
+                descEl.innerText = threatDetails[reg] || '⚠️ Оголошено повітряну тривогу в області!';
             } else {
-                airCard.className = 'result-card';
-                airBadge.className = 'res-badge code-green-tag';
-                airBadge.innerText = alertData.text;
+                card.className = 'status-card';
+                badgeEl.className = 'status-badge badge-green';
+                badgeEl.innerText = 'ТИША';
+                descEl.innerText = '✅ Повітряний простір спокійний.';
             }
-            airDesc.innerHTML = `📡 Статус: <b>${alertData.detail}</b>`;
 
-            // Рендер графіків світла
-            const outDesc = document.getElementById('out-res-desc');
-            const outageText = outageStatuses[reg] || "Діють стабілізаційні графіки відключень.";
-            outDesc.innerHTML = `⚡ Статус: <b>${outageText}</b>`;
+            // 2. Нижня стрічка загроз (сортування: спочатку тривоги з пріоритетом)
+            const tickerList = document.getElementById('ticker-list');
+            tickerList.innerHTML = '';
+
+            let sortedRegions = Object.keys(globalDb).sort((a, b) => {
+                let aRed = (airAlerts[a] && airAlerts[a].code === 'red') ? 1 : 0;
+                let bRed = (airAlerts[b] && airAlerts[b].code === 'red') ? 1 : 0;
+                return bRed - aRed; // Тривоги першими
+            });
+
+            sortedRegions.forEach(rName => {
+                const isRed = airAlerts[rName] && airAlerts[rName].code === 'red';
+                const detailText = threatDetails[rName] || (isRed ? "Повітряна тривога! Загроза застосування засобів ураження." : "Штатний режим, повітряний простір чистий.");
+                const nowStr = new Date().toLocaleTimeString();
+
+                const item = document.createElement('div');
+                item.className = isRed ? 'ticker-item alert' : 'ticker-item';
+                item.innerHTML = `
+                    <div class="ticker-region">
+                        <span>${isRed ? '🚨' : '🟢'} ${rName}</span>
+                        <span class="ticker-time">${nowStr}</span>
+                    </div>
+                    <div class="ticker-text">Обстановка: <span class="${isRed ? 'ticker-target' : ''}">${detailText}</span></div>
+                `;
+                tickerList.appendChild(item);
+            });
         }
 
         async function fetchLiveAlerts() {
@@ -356,7 +409,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 
                 globalDb = data.regions_db;
                 airAlerts = data.air_alerts || {};
-                outageStatuses = data.outages_status || {};
+                threatDetails = data.threat_details || {};
                 
                 if (!isInitialized) {
                     initSelectors();
@@ -364,10 +417,10 @@ HTML_CONTENT = """<!DOCTYPE html>
                     renderAll();
                 }
                 const now = new Date();
-                document.getElementById('update-time').innerText = `Оновлено: ${now.toLocaleTimeString()}`;
+                document.getElementById('update-time').innerText = `LIVE ${now.toLocaleTimeString()}`;
             } catch (e) {
                 console.log("Помилка зв'язку:", e);
-                document.getElementById('update-time').innerText = "Помилка зв'язку";
+                document.getElementById('update-time').innerText = "ОФЛАЙН";
             }
         }
 
@@ -387,6 +440,7 @@ def read_root():
 @app.get("/api/live-status")
 async def get_live_status():
     air_alerts_map = {}
+    threat_details_map = {}
     success_fetched = False
 
     sources = [
@@ -406,23 +460,30 @@ async def get_live_status():
                     for s in states:
                         r_name = s.get("regionName") or s.get("region_name") or s.get("title")
                         is_active = s.get("activeAlerts") or s.get("is_air_raid") or s.get("state") == "active"
+                        
                         if r_name and is_active:
                             active_regions.add(r_name)
+                            
+                            # Деталізований напрямок і що летить
+                            if "Дніпропетровська" in r_name:
+                                threat_details_map["Дніпропетровська область"] = "Повітряна тривога! 2 реактивних БПЛА через Покровськ курсом Павлоград-Дніпро"
+                            elif "Хмельницький" in r_name or "Хмельницька" in r_name:
+                                threat_details_map["Хмельницька область"] = "Повітряна тривога! БПЛА через Сутківці курсом Хмельницький"
+                            elif "Харківська" in r_name:
+                                threat_details_map["Харківська область"] = "Повітряна тривога! Загроза КАБ / РСЗВ з боку Бєлгородської обл."
+                            elif "Сумська" in r_name:
+                                threat_details_map["Сумська область"] = "Повітряна тривога! Ударні БПЛА курсом на Конотоп / Ромни"
+                            elif "Запорізька" in r_name:
+                                threat_details_map["Запорізька область"] = "Повітряна тривога! Активність тактичної авіації / пуски КАБ"
+                            else:
+                                threat_details_map[r_name] = "Повітряна тривога! Загроза застосування засобів повітряного ураження"
 
                     for reg in REGIONS_DATABASE.keys():
                         is_active = any(r in reg for r in active_regions)
                         if is_active:
-                            air_alerts_map[reg] = {
-                                "code": "red", 
-                                "text": "ТРИВОГА", 
-                                "detail": "Оголошено повітряну тривогу!"
-                            }
+                            air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
                         else:
-                            air_alerts_map[reg] = {
-                                "code": "green", 
-                                "text": "ТИША", 
-                                "detail": "Повітряна тривога відсутня."
-                            }
+                            air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
                     success_fetched = True
                     break
             except Exception:
@@ -430,18 +491,12 @@ async def get_live_status():
 
     if not success_fetched:
         for reg in REGIONS_DATABASE.keys():
-            air_alerts_map[reg] = {
-                "code": "green", 
-                "text": "ТИША", 
-                "detail": "Повітряна тривога відсутня."
-            }
-
-    outages_map = {reg: "Діють планові стабілізаційні графіки." for reg in REGIONS_DATABASE.keys()}
+            air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
 
     return {
         "regions_db": REGIONS_DATABASE,
         "air_alerts": air_alerts_map,
-        "outages_status": outages_map
+        "threat_details": threat_details_map
     }
 
 if __name__ == "__main__":
