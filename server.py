@@ -1,220 +1,140 @@
-import os
-import asyncio
+import asyncio, datetime as dt, os, re, time
+from contextlib import asynccontextmanager
+
 import httpx
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+from fastapi.responses import FileResponse, JSONResponse
 
-app = FastAPI()
+BASE = os.path.dirname(os.path.abspath(__file__))
+ALERTS_TOKEN = os.getenv("ALERTS_IN_UA_TOKEN", "")
+TG_API_ID = int(os.getenv("TG_API_ID") or 0)
+TG_API_HASH = os.getenv("TG_API_HASH", "")
+TG_SESSION = os.getenv("TG_SESSION", "")
+TG_CHANNELS = [c.strip() for c in os.getenv("TG_CHANNELS", "kpszsu,air_alert_ua,synegubov").split(",") if c.strip()]
+UPSTREAM_EVERY = 5   # с; перевірте ліміти alerts.in.ua
+STALE_AFTER = 30     # с без свіжих даних -> "невідомо", а не "тиша"
+WARN_TTL = 600       # с тримати 🟡 після повідомлення з Telegram
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-REGIONS_DATABASE = {
-    "Харківська область": [
-        "Харків", "Лозова", "Ізюм", "Чугуїв", "Первомайський", "Зміїв", "Богодухів", "Куп'янськ", "Вовчанськ", 
-        "П'ятихатки", "Люботин", "Мерефа", "Золочів", "Красноград", "Барвінкове", "Валки", "Великий Бурлук", 
-        "Дворічна", "Коломак", "Нова Водолага", "Печеніги", "Сахновщина", "Шевченкове", "Борівське", "Козача Лопань",
-        "Слатине", "Високий", "Покотилівка", "Безлюдівка", "Бабаї", "Південне", "Котляри", "Хорошеве", "Старий Салтів"
-    ],
-    "Дніпропетровська область": [
-        "Дніпро", "Кривий Ріг", "Кам'янське", "Нікополь", "Павлоград", "Новомосковськ", "Марганець", "Жовті Води", 
-        "Покров", "Синельникове", "Тернівка", "Першотравенськ", "П'ятихатки", "Апостолове", "Верхньодніпровськ", 
-        "Зеленодольськ", "Широке", "Царичанка", "Петриківка", "Магдалинівка", "Солоне", "Васильківка", "Межова"
-    ],
-    "Львівська область": [
-        "Львів", "Рудно", "Брюховичі", "Моршин", "Борислав", "Дрогобич", "Стрий", "Червоноград", "Золочів", 
-        "Яворів", "Броди", "Буськ", "Городок", "Жидачів", "Жовква", "Кам'янка-Бузька", "Миколаїв", "Перемишляни",
-        "Радехів", "Старий Самбір", "Турка", "Сокаль", "Пустомити", "Мостиська", "Самбір", "Звенигород", "Глиняни",
-        "Дубляни", "Комарно", "Рава-Руська", "Хирів", "Соснівка", "Гірник", "Шкло", "Славське", "Винники",
-        "Великий Любінь", "Давидів", "Зимна Вода", "Сокільники", "Муроване", "Куликів", "Щирець", "Бібрка", "Добромиль"
-    ],
-    "Київська область": [
-        "Київ", "Біла Церква", "Бровари", "Бориспіль", "Ірпінь", "Буча", "Вишневе", "Фастів", "Васильків", 
-        "Обухів", "Вишгород", "Богуслав", "Боярка", "Березань", "Кагарлик", "Миронівка", "Сквира", "Тараща", 
-        "Тетіїв", "Узин", "Яготин", "Гостомель", "Ворзель", "Коцюбинське", "Бородянка", "Іванків", "Полісся", "Згурівка",
-        "Баришівка", "Макарів", "Рокитне", "Ставище", "Клавдієво-Тарасове", "Козин", "Березівка", "Чайки", "Крюківщина"
-    ],
-    "Одеська область": [
-        "Одеса", "Чорноморськ", "Ізмаїл", "Білгород-Дністровський", "Подільськ", "Южне", "Кілія", "Рені", 
-        "Березівка", "Балта", "Ананьїв", "Арциз", "Вилкове", "Болград", "Роздільна", "Татарбунари", "Теплодар", 
-        "Овидіополь", "Захарівка", "Лиманське", "Сергіївка", "Чорноморське", "Авангард", "Таїрове", "Великодолинське"
-    ],
-    "Запорізька область": [
-        "Запоріжжя", "Мелітополь", "Бердянськ", "Енергодар", "Токмак", "Пологи", "Василівка", 
-        "Оріхів", "Гуляйполе", "Вільнянськ", "Приморськ", "Кам'янка-Дніпровська", "Якимівка", "Приазовське", 
-        "Чернігівка", "Веселе", "Михайлівка", "Кушугум", "Малокатеринівка", "Степногірськ", "Комишуваха"
-    ],
-    "Вінницька область": [
-        "Вінниця", "Жмеринка", "Козятин", "Ладижин", "Могилів-Подільський", "Гайсин", "Бар", "Гнівань", 
-        "Тульчин", "Шаргород", "Хмільник", "Калинівка", "Іллінці", "Ямпіль", "Немирів", "Погребище", "Липовець", 
-        "Муровані Курилівці", "Чечельник", "Томашпіль", "Тиврів", "Чернівці", "Оратів", "Стрижавка", "Десна", "Ворновиця"
-    ],
-    "Полтавська область": [
-        "Полтава", "Кременчук", "Горішні Плавні", "Лубни", "Миргород", "Гадяч", "Карлівка", "Пирятин", 
-        "Хорол", "Лохвиця", "Глобине", "Зіньків", "Кобеляки", "Решетилівка", "Великі Сорочинці", "Диканька", "Котельва"
-    ],
-    "Черкаська область": [
-        "Черкаси", "Умань", "Сміла", "Золотоноша", "Канів", "Шпола", "Звенигородка", "Корсунь-Шевченківський", 
-        "Тальне", "Жашків", "Кам'янка", "Христинівка", "Монастирище", "Ватутіне", "Лисянка", "Маньківка", "Чорнобаївка"
-    ],
-    "Чернігівська область": [
-        "Чернігів", "Ніжин", "Прилуки", "Бахмач", "Носівка", "Борзна", "Корюківка", "Городня", "Сновськ", 
-        "Бобровиця", "Ічня", "Остер", "Семенівка", "Новгород-Сіверський", "Козелець", "Ріпки", "Куликівка"
-    ],
-    "Сумська область": [
-        "Суми", "Конотоп", "Шостка", "Охтирка", "Ромни", "Глухів", "Лебедин", "Кролевець", "Тростянець", 
-        "Білопілля", "Путивль", "Буринь", "Ворожба", "Середина-Буда", "Ямпіль", "Краснопілля", "Липова Долина"
-    ],
-    "Житомирська область": [
-        "Житомир", "Бердичів", "Коростень", "Звягель", "Малин", "Коростишів", "Овруч", 
-        "Радомишль", "Баранівка", "Олевськ", "Андрушівка", "Романів", "Ємільчине", "Брусилів", "Чуднів", "Пулини"
-    ],
-    "Рівненська область": [
-        "Рівне", "Вараш", "Дубно", "Костопіль", "Сарни", "Здолбунів", "Острог", "Березне", "Радивилів", 
-        "Дубровиця", "Володимирець", "Клевань", "Млинів", "Рокитне", "Гоща", "Зарічне"
-    ],
-    "Волинська область": [
-        "Луцьк", "Ковель", "Нововолинськ", "Володимир", "Ківерці", "Камінь-Каширський", "Рожище", "Ратно", 
-        "Любомль", "Маневичі", "Горохів", "Іваничі", "Турійськ", "Шацьк", "Стара Вижівка", "Цумань", "Торчин"
-    ],
-    "Івано-Франківська область": [
-        "Івано-Франківськ", "Калуш", "Коломия", "Надвірна", "Долина", "Бурштин", "Снятин", "Городенка", "Тисмениця", 
-        "Tлумач", "Косів", "Яремче", "Болехів", "Рогатин", "Делятин", "Ланчин", "Богородчани", "Верховина", "Кути"
-    ],
-    "Тернопільська область": [
-        "Тернопіль", "Чортків", "Кременець", "Бережани", "Збараж", "Теребовля", "Бучач", "Козова", "Ланівці", 
-        "Підволочиськ", "Шумськ", "Монастириська", "Зборів", "Гусятин", "Хоростків", "Копичинці", "Підгайці"
-    ],
-    "Хмельницька область": [
-        "Хмельницький", "Кам'янець-Подільський", "Шепетівка", "Нетішин", "Славута", "Старокостянтинів", "Полонне", 
-        "Красилів", "Волочиськ", "Ізяслав", "Городок", "Дунаївці", "Летичів", "Деражня", "Ярмолинці", "Віньківці"
-    ],
-    "Кіровоградська область": [
-        "Кропивницький", "Олександрівка", "Світловодськ", "Знам'янка", "Долинська", "Гайворон", "Новоукраїнка", 
-        "Бобринець", "Мала Виска", "Помічна", "Благовіщенське", "Устинівка", "Онуфріївка", "Петрове"
-    ],
-    "Миколаївська область": [
-        "Миколаїв", "Первомайськ", "Южноукраїнськ", "Вознесенськ", "Новий Буг", "Очаків", "Снігурівка", "Баштанка", 
-        "Нова Одеса", "Березнегувате", "Врадіївка", "Доманівка", "Криве Озеро", "Арбузинка", "Братське", "Веселинове"
-    ],
-    "Херсонська область": [
-        "Херсон", "Нова Каховка", "Каховка", "Генічеськ", "Скадовськ", "Берислав", "Таврійськ", "Олешки", 
-        "Гола Пристань", "Нижні Сірогози", "Велика Лепетиха", "Велика Олександрівка", "Високопілля", "Іванівка", "Каланчак"
-    ],
-    "Донецька область": [
-        "Краматорськ", "Слов'янськ", "Покровськ", "Костянтинівка", "Дружківка", "Лиман", "Добропілля", "Селидове"
-    ],
-    "Закарпатська область": [
-        "Ужгород", "Мукачево", "Хуст", "Виноградів", "Берегове", "Тячів", "Рахів", "Свалява", "Іршава", 
-        "Воловець", "Міжгір'я", "Великий Березний", "Перечин", "Солотвино", "Ясиня", "Буштино", "Вишково", "Чоп"
-    ]
+STEMS = {
+ "Вінницька область": r"вінни", "Волинська область": r"волин|луцьк", "Дніпропетровська область": r"дніпр",
+ "Донецька область": r"донеч|донецьк|краматорськ|слов'янськ", "Житомирська область": r"житомир",
+ "Закарпатська область": r"закарпат|ужгород", "Запорізька область": r"запорі",
+ "Івано-Франківська область": r"франків", "Київська область": r"київщин|київськ",
+ "Кіровоградська область": r"кіровоград|кропивниц", "Львівська область": r"львів|львов",
+ "Миколаївська область": r"миколаїв", "Одеська область": r"одещин|одес", "Полтавська область": r"полтав",
+ "Рівненська область": r"рівн", "Сумська область": r"\bсум(?:щин|ськ|и\b|ах\b)", "Тернопільська область": r"тернопіл",
+ "Харківська область": r"харків", "Херсонська область": r"херсон", "Хмельницька область": r"хмельни",
+ "Черкаська область": r"черка", "Чернівецька область": r"чернівц|буковин", "Чернігівська область": r"чернігів",
+ "м. Київ": r"\bкиїв(?!щин|ськ)\w*|\bкиєв\w*",
 }
+REGIONS = list(STEMS)
+THREAT = re.compile(r"шахед|бпла|дрон|ракет|балістик|крилат|загроз|керован", re.I)
+S = {"act": {}, "ts": 0.0, "warn": {}, "tg_ts": 0.0, "today": 0, "day": dt.date.today()}
+
+
+async def poll_alerts():
+    async with httpx.AsyncClient(timeout=4) as c:
+        while True:
+            wait = UPSTREAM_EVERY
+            try:
+                r = await c.get("https://api.alerts.in.ua/v1/alerts/active.json",
+                                headers={"Authorization": "Bearer " + ALERTS_TOKEN})
+                if r.status_code == 429:
+                    wait = 30
+                r.raise_for_status()
+                act = {}
+                for a in r.json().get("alerts", []):
+                    o = a.get("location_oblast")
+                    if a.get("alert_type") == "air_raid" and o in STEMS:
+                        st = a.get("started_at", "")
+                        act[o] = min(act.get(o, st), st)
+                S["today"] += len([o for o in act if o not in S["act"]])
+                S["act"], S["ts"] = act, time.time()
+            except Exception as e:
+                print("alerts.in.ua:", e)
+            await asyncio.sleep(wait)
+
+
+async def tg_listen():
+    from telethon import TelegramClient, events
+    from telethon.sessions import StringSession
+    while True:
+        client = None
+        try:
+            client = TelegramClient(StringSession(TG_SESSION), TG_API_ID, TG_API_HASH)
+            await client.connect()
+            if not await client.is_user_authorized():
+                print("TG_SESSION недійсна - Telegram вимкнено")
+                return
+
+            @client.on(events.NewMessage(chats=TG_CHANNELS))
+            async def _(e):
+                t = (e.raw_text or "").lower()
+                if THREAT.search(t):
+                    for reg, st in STEMS.items():
+                        if re.search(st, t):
+                            S["warn"][reg] = time.time() + WARN_TTL
+
+            while client.is_connected():
+                S["tg_ts"] = time.time()
+                await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            print("telegram:", e)
+        finally:
+            if client:
+                await client.disconnect()
+        await asyncio.sleep(15)
+
+
+def status():
+    now = time.time()
+    if S["day"] != dt.date.today():
+        S["day"], S["today"] = dt.date.today(), 0
+    fresh = now - S["ts"] < STALE_AFTER
+    out = {}
+    for r in REGIONS:
+        if fresh and r in S["act"]:
+            out[r] = {"state": "alert", "since": S["act"][r]}
+        elif S["warn"].get(r, 0) > now:
+            out[r] = {"state": "warn"}
+        elif fresh:
+            out[r] = {"state": "calm"}      # "тиша" ТІЛЬКИ за свіжими даними
+        else:
+            out[r] = {"state": "unk"}
+    out["_sources"] = {"alerts_in_ua": fresh, "telegram": now - S["tg_ts"] < STALE_AFTER}
+    out["_today"] = S["today"]
+    return out
+
+
+@asynccontextmanager
+async def lifespan(app):
+    tasks = [asyncio.create_task(poll_alerts())]
+    if TG_API_ID and TG_API_HASH and TG_SESSION:
+        tasks.append(asyncio.create_task(tg_listen()))
+    yield
+    for t in tasks:
+        t.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
+NOCACHE = {"Cache-Control": "no-store"}
+
 
 @app.get("/")
 def read_root():
-    return FileResponse("index.html")
+    return FileResponse(os.path.join(BASE, "index.html"), headers=NOCACHE)
 
-@app.get("/api/live-status")
-async def get_live_status():
-    air_alerts_map = {}
-    threat_details_map = {}
-    active_regions_text = set()
 
-    # Рівень 1: Офіційний Державний API повітряних тривог (alerts.in.ua / ukrainealarm)
-    official_sources = [
-        "https://alerts.in.ua/api/v1/alerts",
-        "https://api.ukrainealarm.com/api/v3/alerts"
-    ]
+@app.get("/settlements.json")
+def settlements():
+    p = os.path.join(BASE, "settlements.json")
+    return FileResponse(p, headers=NOCACHE) if os.path.exists(p) else JSONResponse({}, status_code=404)
 
-    async with httpx.AsyncClient(timeout=3.0) as client:
-        for url in official_sources:
-            try:
-                headers = {"X-API-Key": "public"} if "alerts.in.ua" in url else {"Authorization": "Bearer public"}
-                resp = await client.get(url, headers=headers)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    items = data.get("alerts", data.get("states", []))
-                    for item in items:
-                        r_name = item.get("region_name") or item.get("regionName") or item.get("title")
-                        is_active = (
-                            item.get("finished_at") is None or 
-                            item.get("activeAlerts") is True or 
-                            item.get("state") == "active" or
-                            item.get("is_air_raid") is True
-                        )
-                        if r_name and is_active:
-                            active_regions_text.add(str(r_name).lower())
-                    if len(active_regions_text) > 0:
-                        break
-            except Exception:
-                continue
 
-    # Рівень 2: Мережа OSINT та моніторингових каналів (парсинг відкритих потоків для виявлення векторів)
-    monitoring_channels = ["eRadar", "vanek_mykolaiv", "monitor_radar"]
-    async with httpx.AsyncClient(timeout=2.0) as client:
-        for chan in monitoring_channels:
-            try:
-                r = await client.get(f"https://t.me/s/{chan}", follow_redirects=True)
-                if r.status_code == 200:
-                    html_text = r.text.lower()
-                    for reg_name in REGIONS_DATABASE.keys():
-                        key_word = reg_name.split()[0].lower()
-                        if key_word in html_text and any(w in html_text for w in ["бпла", "ракета", "курс", "міг", "скажи", "укриття"]):
-                            active_regions_text.add(key_word)
-            except Exception:
-                continue
-
-    # Формування статусу та детальних векторів для кожної області
-    for reg in REGIONS_DATABASE.keys():
-        reg_keyword = reg.split()[0].lower()
-        is_red = any(reg_keyword in r or r in reg_keyword for r in active_regions_text)
-        
-        # Перевірка ключових великих міст/областей
-        if "київ" in reg_keyword and any("київ" in r for r in active_regions_text):
-            is_red = True
-        if "харків" in reg_keyword and any("харків" in r for r in active_regions_text):
-            is_red = True
-
-        if is_red:
-            air_alerts_map[reg] = {"code": "red", "text": "ТРИВОГА"}
-            
-            # Генерація точних оперативних векторів руху цілей
-            if "Київ" in reg:
-                threat_details_map[reg] = "➔ БПЛА з півночі через Вишгород курсом на Київ / Бровари"
-            elif "Харків" in reg:
-                threat_details_map[reg] = "➔ Загроза застосування БПЛА / КАБ з боку Бєлгородської обл."
-            elif "Дніпр" in reg:
-                threat_details_map[reg] = "➔ 2х БПЛА через Покровськ курсом на Павлоград-Дніпро"
-            elif "Полтав" in reg:
-                threat_details_map[reg] = "➔ БПЛА через Сумщину курсом на Кременчук / Козельщину"
-            elif "Чернігів" in reg:
-                threat_details_map[reg] = "➔ БПЛА курсом на Городню / Ніжин"
-            elif "Вінниц" in reg:
-                threat_details_map[reg] = "➔ БПЛА транзитом курсом на Борівку / західні області"
-            elif "Миколаїв" in reg:
-                threat_details_map[reg] = "➔ БПЛА з Херсонщини курсом на Криве Озеро / Любашівку"
-            elif "Запоріж" in reg:
-                threat_details_map[reg] = "➔ Активність тактичної авіації / пуски КАБ по лінії фронту"
-            elif "Хмельниц" in reg:
-                threat_details_map[reg] = "➔ БПЛА через Сутківці курсом на Старокостянтинів"
-            else:
-                threat_details_map[reg] = "➔ Оголошено повітряну тривогу! Зафіксовано загрозу."
-        else:
-            air_alerts_map[reg] = {"code": "green", "text": "ТИША"}
-
-    return {
-        "regions_db": REGIONS_DATABASE,
-        "air_alerts": air_alerts_map,
-        "threat_details": threat_details_map
-    }
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("server:app", host="0.0.0.0", port=port)
+@app.get("/api/status")
+def get_live_status():
+    return JSONResponse(status(), headers=NOCACHE)
