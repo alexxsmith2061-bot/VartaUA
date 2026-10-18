@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 httpx
 telethon
+sqlalchemy>=2,<3
+psycopg[binary]>=3,<4
+PyJWT>=2,<3
