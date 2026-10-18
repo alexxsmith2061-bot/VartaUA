@@ -4,302 +4,759 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VartaUA — Львівщина</title>
+<meta name="theme-color" content="#101722">
+<title>VartaUA — Моніторинг Львівщини</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0d1520;color:#eaf1fa;font-family:Arial,sans-serif}
-header{height:65px;background:#172334;border-bottom:1px solid #33445a;display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
-.logo{font-size:23px;font-weight:800;color:#6bb7ff}
-.small{font-size:12px;color:#a5b6ca}
-.layout{display:grid;grid-template-columns:320px minmax(0,1fr);height:calc(100dvh - 65px)}
-aside{padding:15px;overflow:auto;background:#172334}
-.panel{background:#202f42;border:1px solid #354a61;border-radius:12px;padding:15px;margin-bottom:12px}
-h3{margin:0 0 13px;font-size:16px}
-button,select{width:100%;padding:11px;border:1px solid #45617b;background:#142234;color:white;border-radius:8px;margin:5px 0;cursor:pointer}
-button:hover{background:#29405b}
-input[type=range]{width:100%;accent-color:#56adff}
-.value{font-size:29px;text-align:center;color:#65baff;font-weight:bold;margin:10px}
-.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
-.muted{font-size:12px;color:#b1c0d0;line-height:1.55}
-.status{padding:10px;border-radius:8px;background:#344357;font-size:13px;line-height:1.5}
-.status.alert{background:#692a34}
-.status.calm{background:#20533e}
-.status.warn{background:#705225}
-main{position:relative;min-height:0}
-#map{width:100%;height:100%;background:#142235}
-.map-note{position:absolute;z-index:500;bottom:25px;left:12px;max-width:270px;background:#142235ee;padding:12px;border-radius:10px;font-size:12px;line-height:1.5;pointer-events:none}
-a{color:#7dbfff}
-.leaflet-container{background:#142235}
-.map-tiles{filter:brightness(.72) saturate(.75)}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  font-family:Arial,sans-serif;
+  background:#101722;
+  color:#edf3fa;
+}
+
+header{
+  height:68px;
+  background:#172333;
+  border-bottom:1px solid #35465b;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 20px;
+  gap:12px;
+}
+
+.logo{
+  color:#68b6ff;
+  font-size:25px;
+  font-weight:800;
+}
+
+.subtitle{
+  font-size:12px;
+  color:#a9bbcf;
+  margin-top:4px;
+}
+
+.connection{
+  font-size:12px;
+  color:#d6e2ef;
+  background:#28394e;
+  padding:9px 12px;
+  border-radius:20px;
+  text-align:center;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:315px minmax(0,1fr);
+  height:calc(100dvh - 68px);
+  min-height:450px;
+}
+
+aside{
+  background:#172333;
+  border-right:1px solid #35465b;
+  padding:15px;
+  overflow-y:auto;
+}
+
+.panel{
+  background:#203044;
+  border:1px solid #344a63;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:13px;
+}
+
+h3{
+  margin:0 0 12px;
+  font-size:16px;
+}
+
+select,button{
+  width:100%;
+  padding:11px;
+  margin:5px 0;
+  border:1px solid #45617d;
+  background:#142235;
+  color:white;
+  border-radius:8px;
+  font-size:14px;
+  cursor:pointer;
+}
+
+button:hover,select:hover{
+  background:#29415c;
+}
+
+input[type="range"]{
+  width:100%;
+  accent-color:#59b1ff;
+  margin:16px 0;
+}
+
+.radius-value{
+  font-size:30px;
+  color:#6bbcff;
+  font-weight:800;
+  text-align:center;
+}
+
+.range-labels{
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  color:#afc0d1;
+}
+
+.muted{
+  color:#aebed0;
+  font-size:12px;
+  line-height:1.6;
+}
+
+.status{
+  border-radius:9px;
+  background:#35465b;
+  padding:12px;
+  font-size:14px;
+  line-height:1.5;
+}
+
+.status.alert{
+  background:#73313c;
+  color:#fff;
+}
+
+.status.calm{
+  background:#205841;
+  color:#fff;
+}
+
+.status.warn{
+  background:#6d522b;
+  color:#fff;
+}
+
+main{
+  position:relative;
+  min-width:0;
+  min-height:0;
+}
+
+#map{
+  height:100%;
+  width:100%;
+  background:#152436;
+}
+
+.map-note{
+  position:absolute;
+  z-index:500;
+  bottom:24px;
+  left:12px;
+  max-width:270px;
+  padding:12px;
+  background:rgba(15,25,39,.94);
+  border:1px solid #435a73;
+  border-radius:10px;
+  font-size:12px;
+  line-height:1.6;
+  pointer-events:none;
+}
+
+.map-switch{
+  position:absolute;
+  z-index:500;
+  top:12px;
+  right:12px;
+  display:flex;
+  gap:7px;
+  background:rgba(15,25,39,.94);
+  border:1px solid #435a73;
+  border-radius:10px;
+  padding:6px;
+}
+
+.map-switch button{
+  width:auto;
+  margin:0;
+  padding:9px 12px;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.map-switch button.active{
+  background:#2779bd;
+  border-color:#65b7ff;
+}
+
+a{color:#80c1ff}
+
+.leaflet-container{
+  background:#152436;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip{
+  background:#203044;
+  color:white;
+}
+
 @media(max-width:760px){
-.layout{display:flex;flex-direction:column;height:auto}
-main{height:55dvh;min-height:360px;order:1}
-aside{order:2;overflow:visible}
-header{height:auto;min-height:65px}
+  header{
+    padding:10px 12px;
+    height:auto;
+    min-height:68px;
+  }
+
+  .logo{font-size:21px}
+
+  .layout{
+    display:flex;
+    flex-direction:column;
+    height:auto;
+    min-height:0;
+  }
+
+  main{
+    order:1;
+    height:58dvh;
+    min-height:360px;
+  }
+
+  aside{
+    order:2;
+    overflow:visible;
+  }
+
+  .map-note{
+    max-width:200px;
+    font-size:11px;
+  }
+
+  .map-switch{
+    top:9px;
+    right:9px;
+  }
+
+  .map-switch button{
+    padding:8px;
+    font-size:11px;
+  }
 }
 </style>
 </head>
+
 <body>
 
 <header>
-<div>
-<div class="logo">🛡 VartaUA</div>
-<div class="small">Львів та Львівська область</div>
-</div>
-<div class="small" id="connection">Завантаження...</div>
+  <div>
+    <div class="logo">🛡 VartaUA</div>
+    <div class="subtitle">Моніторинг Львова та Львівської області</div>
+  </div>
+  <div class="connection" id="connection">
+    ⏳ Завантаження...
+  </div>
 </header>
 
 <div class="layout">
+
 <aside>
 
-<div class="panel">
-<h3>📍 Центр спостереження</h3>
-<select id="city">
-<option value="49.8397,24.0297">Львів</option>
-<option value="49.3500,23.5000">Дрогобич</option>
-<option value="49.2622,23.8519">Стрий</option>
-<option value="50.3821,24.2275">Шептицький</option>
-<option value="50.0667,24.9333">Золочів</option>
-<option value="49.0360,23.5130">Сколе</option>
-<option value="49.4443,23.0000">Самбір</option>
-<option value="49.7989,23.1480">Мостиська</option>
-<option value="49.9423,23.5738">Яворів</option>
-<option value="50.2320,24.3930">Кам'янка-Бузька</option>
-</select>
-<button id="locate">📡 Моє місцезнаходження</button>
-<div class="muted" id="centerLabel">Центр: Львів</div>
-</div>
+  <div class="panel">
+    <h3>🗺️ Вигляд карти</h3>
 
-<div class="panel">
-<h3>🎯 Радіус спостереження</h3>
-<div class="value"><span id="radiusValue">150</span> км</div>
-<input id="radius" type="range" min="5" max="150" step="5" value="150">
-<div class="row muted"><span>5 км</span><span>150 км</span></div>
-<p class="muted">Синє коло показує вибрану територію, а не зону ураження.</p>
-<button id="fit">Показати весь радіус</button>
-</div>
+    <select id="mapStyle">
+      <option value="dark">🌙 Темна інтерактивна</option>
+      <option value="satellite">🛰️ Супутникова</option>
+    </select>
 
-<div class="panel">
-<h3>🚨 Повітряна тривога</h3>
-<div id="alertStatus" class="status">Очікування даних...</div>
-<p class="muted" id="updated">Перевірка сервера...</p>
-<p class="muted">Офіційне джерело: <a href="https://alerts.in.ua/" target="_blank" rel="noopener">Alerts.in.ua</a></p>
-</div>
+    <p class="muted">
+      Перемикай між темною картою та супутниковими знімками.
+    </p>
+  </div>
 
-<div class="panel">
-<h3>🔔 Звук</h3>
-<button id="sound">🔇 Увімкнути звук</button>
-<p class="muted">Звукове повідомлення про нову обласну тривогу працює, поки сторінка відкрита. Радіус не визначає точне місце загрози.</p>
-</div>
+  <div class="panel">
+    <h3>📍 Центр спостереження</h3>
 
-<div class="panel">
-<h3>📡 Повідомлення про загрози</h3>
-<p class="muted">Поки немає підключеного джерела повідомлень. Надалі тут з'являтимуться публічні повідомлення про БпЛА, ракети та інші загрози з часом і джерелом.</p>
-<a href="https://t.me/kpszsu" target="_blank" rel="noopener">Повітряні сили ЗСУ ↗</a>
-</div>
+    <select id="city">
+      <option value="49.8397,24.0297">Львів</option>
+      <option value="49.3500,23.5000">Дрогобич</option>
+      <option value="49.2622,23.8519">Стрий</option>
+      <option value="50.3821,24.2275">Шептицький</option>
+      <option value="50.0667,24.9333">Золочів</option>
+      <option value="49.0360,23.5130">Сколе</option>
+      <option value="49.4443,23.0000">Самбір</option>
+      <option value="49.7989,23.1480">Мостиська</option>
+      <option value="49.9423,23.5738">Яворів</option>
+      <option value="50.2320,24.3930">Кам'янка-Бузька</option>
+    </select>
 
-<div class="panel">
-<h3>⚡ Електроенергія</h3>
-<a href="https://poweron.loe.lviv.ua/shedule-off" target="_blank" rel="noopener">Графіки Львівобленерго ↗</a>
-<p class="muted">Наступний модуль: вибір населеного пункту, вулиці та черги.</p>
-</div>
+    <button id="locate">📡 Моє місцезнаходження</button>
+
+    <p class="muted" id="centerLabel">Центр: Львів</p>
+  </div>
+
+  <div class="panel">
+    <h3>🎯 Радіус спостереження</h3>
+
+    <div class="radius-value">
+      <span id="radiusValue">150</span> км
+    </div>
+
+    <input
+      id="radius"
+      type="range"
+      min="5"
+      max="150"
+      step="5"
+      value="150"
+    >
+
+    <div class="range-labels">
+      <span>5 км</span>
+      <span>150 км</span>
+    </div>
+
+    <p class="muted">
+      Синє коло показує обраний радіус.
+      Воно не є зоною ураження.
+    </p>
+
+    <button id="fit">Показати весь радіус</button>
+  </div>
+
+  <div class="panel">
+    <h3>🚨 Повітряна тривога</h3>
+
+    <div class="status" id="alertStatus">
+      Очікування даних...
+    </div>
+
+    <p class="muted" id="updated">
+      Перевірка сервера...
+    </p>
+
+    <p class="muted">
+      Джерело:
+      <a href="https://alerts.in.ua/"
+         target="_blank"
+         rel="noopener noreferrer">Alerts.in.ua</a>
+    </p>
+  </div>
+
+  <div class="panel">
+    <h3>🔔 Звукові сповіщення</h3>
+
+    <button id="sound">🔇 Увімкнути звук</button>
+
+    <p class="muted">
+      Звук спрацює при новій обласній тривозі,
+      якщо сторінка відкрита.
+      Це не сповіщення про точну позицію цілі.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h3>📡 Повідомлення про загрози</h3>
+
+    <p class="muted">
+      Тут будуть повідомлення про БпЛА, ракети,
+      КАБи та інші загрози після підключення
+      перевірених джерел.
+    </p>
+
+    <a href="https://t.me/kpszsu"
+       target="_blank"
+       rel="noopener noreferrer">
+      Повітряні сили ЗСУ ↗
+    </a>
+  </div>
+
+  <div class="panel">
+    <h3>⚡ Електроенергія</h3>
+
+    <a href="https://poweron.loe.lviv.ua/shedule-off"
+       target="_blank"
+       rel="noopener noreferrer">
+      Графіки Львівобленерго ↗
+    </a>
+
+    <p class="muted">
+      Надалі додамо графіки за вулицею та чергою
+      через дозволене джерело даних.
+    </p>
+  </div>
 
 </aside>
 
 <main>
-<div id="map"></div>
-<div class="map-note">
-<strong>VartaUA • Львівщина</strong>
-<div>🔵 Синє коло — радіус спостереження.</div>
-<div>⚠️ Точні позиції повітряних цілей не відображаються.</div>
-</div>
+  <div id="map"></div>
+
+  <div class="map-switch">
+    <button id="darkButton" class="active">
+      🌙 Карта
+    </button>
+    <button id="satelliteButton">
+      🛰️ Супутник
+    </button>
+  </div>
+
+  <div class="map-note">
+    <strong>VartaUA • Львівщина</strong>
+    <div>🔵 Синє коло — вибраний радіус.</div>
+    <div>⚠️ Координати повітряних цілей не відображаються.</div>
+  </div>
 </main>
+
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 "use strict";
 
-const LVIV=[49.8397,24.0297];
-let center=[...LVIV];
-let radius=150;
-let soundOn=false;
-let audioCtx=null;
-let previousAlert=null;
+const LVIV = [49.8397,24.0297];
 
-const map=L.map("map",{zoomControl:true}).setView(center,8);
+let center = [...LVIV];
+let radiusKm = 150;
+let soundEnabled = false;
+let audioContext = null;
+let previousAlert = null;
 
-const tiles=L.tileLayer(
- "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
- {
-  maxZoom:19,
-  className:"map-tiles",
-  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
- }
-).addTo(map);
+const map = L.map("map", {
+  zoomControl:true,
+  preferCanvas:true
+}).setView(center,8);
 
-tiles.on("tileerror",()=>{
- document.getElementById("connection").textContent=
- "⚠️ Проблема із завантаженням карти";
-});
+// Темна інтерактивна карта
+const darkMap = L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  {
+    maxZoom:19,
+    attribution:
+      '&copy; OpenStreetMap contributors &copy; CARTO'
+  }
+);
 
-const circle=L.circle(center,{
- radius:radius*1000,
- color:"#55aeff",
- weight:2,
- fillColor:"#55aeff",
- fillOpacity:.10
+// Супутникова карта
+const satelliteMap = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {
+    maxZoom:19,
+    attribution:
+      "Tiles &copy; Esri and imagery providers"
+  }
+);
+
+let activeTiles = darkMap;
+activeTiles.addTo(map);
+
+function changeMapStyle(style) {
+  if (map.hasLayer(activeTiles)) {
+    map.removeLayer(activeTiles);
+  }
+
+  activeTiles = style === "satellite"
+    ? satelliteMap
+    : darkMap;
+
+  activeTiles.addTo(map);
+  activeTiles.bringToBack();
+
+  document.getElementById("mapStyle").value = style;
+
+  document.getElementById("darkButton")
+    .classList.toggle("active", style === "dark");
+
+  document.getElementById("satelliteButton")
+    .classList.toggle("active", style === "satellite");
+}
+
+document.getElementById("mapStyle")
+  .addEventListener("change", event => {
+    changeMapStyle(event.target.value);
+  });
+
+document.getElementById("darkButton")
+  .addEventListener("click", () => {
+    changeMapStyle("dark");
+  });
+
+document.getElementById("satelliteButton")
+  .addEventListener("click", () => {
+    changeMapStyle("satellite");
+  });
+
+// Радіус
+const circle = L.circle(center, {
+  radius:radiusKm*1000,
+  color:"#5cb3ff",
+  weight:2,
+  fillColor:"#5cb3ff",
+  fillOpacity:0.10
 }).addTo(map);
 
-const marker=L.circleMarker(center,{
- radius:6,
- color:"#fff",
- weight:2,
- fillColor:"#55aeff",
- fillOpacity:1
+// Центр спостереження
+const marker = L.circleMarker(center, {
+  radius:6,
+  color:"#ffffff",
+  weight:2,
+  fillColor:"#5cb3ff",
+  fillOpacity:1
 }).addTo(map);
 
 marker.bindPopup("Центр спостереження");
 
-function fitRadius(){
- map.fitBounds(circle.getBounds(),{
-  padding:[25,25],
-  maxZoom:13
- });
+function fitRadius() {
+  map.fitBounds(circle.getBounds(), {
+    padding:[25,25],
+    maxZoom:13
+  });
 }
 
-function setCenter(coords,name){
- center=coords;
- circle.setLatLng(center);
- marker.setLatLng(center);
- document.getElementById("centerLabel").textContent="Центр: "+name;
- fitRadius();
+function setCenter(coords,name) {
+  center=coords;
+
+  circle.setLatLng(center);
+  marker.setLatLng(center);
+
+  document.getElementById("centerLabel").textContent =
+    "Центр: "+name;
+
+  fitRadius();
 }
 
-document.getElementById("city").addEventListener("change",e=>{
- const coords=e.target.value.split(",").map(Number);
- setCenter(coords,e.target.selectedOptions[0].textContent);
-});
+document.getElementById("city")
+  .addEventListener("change", event => {
+    const coords = event.target.value
+      .split(",").map(Number);
 
-document.getElementById("radius").addEventListener("input",e=>{
- radius=Number(e.target.value);
- document.getElementById("radiusValue").textContent=radius;
- circle.setRadius(radius*1000);
- fitRadius();
-});
+    setCenter(
+      coords,
+      event.target.selectedOptions[0].textContent
+    );
+  });
 
-document.getElementById("fit").addEventListener("click",fitRadius);
+document.getElementById("radius")
+  .addEventListener("input", event => {
+    radiusKm=Number(event.target.value);
 
-document.getElementById("locate").addEventListener("click",()=>{
- if(!navigator.geolocation){
-  alert("Браузер не підтримує геолокацію");
-  return;
- }
- navigator.geolocation.getCurrentPosition(
-  p=>{
-   setCenter([p.coords.latitude,p.coords.longitude],"моє місце");
-   document.getElementById("city").selectedIndex=-1;
-  },
-  ()=>alert("Не вдалося отримати місцезнаходження"),
-  {timeout:12000}
- );
-});
+    document.getElementById("radiusValue").textContent =
+      radiusKm;
 
-document.getElementById("sound").addEventListener("click",async()=>{
- if(!soundOn){
-  try{
-   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
-   await audioCtx.resume();
-   soundOn=true;
-  }catch(e){
-   alert("Браузер не дозволив увімкнути звук");
+    circle.setRadius(radiusKm*1000);
+    fitRadius();
+  });
+
+document.getElementById("fit")
+  .addEventListener("click",fitRadius);
+
+// Геолокація
+document.getElementById("locate")
+  .addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      alert("Браузер не підтримує геолокацію");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        setCenter(
+          [
+            position.coords.latitude,
+            position.coords.longitude
+          ],
+          "моє місцезнаходження"
+        );
+
+        document.getElementById("city").selectedIndex=-1;
+      },
+      () => {
+        alert("Не вдалося отримати місцезнаходження");
+      },
+      {timeout:12000}
+    );
+  });
+
+// Звук
+document.getElementById("sound")
+  .addEventListener("click", async () => {
+    if (!soundEnabled) {
+      try {
+        audioContext = audioContext ||
+          new (window.AudioContext ||
+               window.webkitAudioContext)();
+
+        await audioContext.resume();
+        soundEnabled=true;
+      } catch (error) {
+        alert("Не вдалося увімкнути звук");
+      }
+    } else {
+      soundEnabled=false;
+    }
+
+    document.getElementById("sound").textContent =
+      soundEnabled
+        ? "🔊 Вимкнути звук"
+        : "🔇 Увімкнути звук";
+  });
+
+function beep() {
+  if (!soundEnabled || !audioContext) return;
+
+  const start=audioContext.currentTime;
+
+  for (let i=0;i<3;i++) {
+    const oscillator=audioContext.createOscillator();
+    const gain=audioContext.createGain();
+
+    oscillator.frequency.value=i%2 ? 550 : 750;
+
+    gain.gain.setValueAtTime(
+      0.0001,start+i*0.3
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.15,start+i*0.3+0.03
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,start+i*0.3+0.23
+    );
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.start(start+i*0.3);
+    oscillator.stop(start+i*0.3+0.25);
   }
- }else{
-  soundOn=false;
- }
- document.getElementById("sound").textContent=
- soundOn?"🔊 Вимкнути звук":"🔇 Увімкнути звук";
-});
-
-function beep(){
- if(!soundOn||!audioCtx)return;
- const start=audioCtx.currentTime;
- for(let i=0;i<3;i++){
-  const osc=audioCtx.createOscillator();
-  const gain=audioCtx.createGain();
-  osc.frequency.value=i%2?550:750;
-  gain.gain.setValueAtTime(.0001,start+i*.3);
-  gain.gain.exponentialRampToValueAtTime(.15,start+i*.3+.03);
-  gain.gain.exponentialRampToValueAtTime(.0001,start+i*.3+.23);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(start+i*.3);
-  osc.stop(start+i*.3+.25);
- }
 }
 
-function setAlert(text,kind){
- const el=document.getElementById("alertStatus");
- el.className="status "+kind;
- el.textContent=text;
+// Статус тривоги
+function setAlert(text,kind) {
+  const element=document.getElementById("alertStatus");
+  element.className="status "+kind;
+  element.textContent=text;
 }
 
-async function updateStatus(){
- try{
-  const response=await fetch("/api/status",{cache:"no-store"});
-  if(!response.ok)throw new Error("HTTP "+response.status);
-  const data=await response.json();
-  const meta=data._meta||{};
-  const region=data["Львівська область"]||data["Львівська"]||{};
-  const state=typeof region==="string"?region:
-   (region.state||region.status||"unk");
+async function updateStatus() {
+  try {
+    const response=await fetch("/api/status", {
+      cache:"no-store"
+    });
 
-  if(meta.fresh!==true){
-   setAlert("⚠️ Немає актуальних даних про тривоги","warn");
-   document.getElementById("connection").textContent="API недоступний";
-   document.getElementById("updated").textContent=
-    meta.alerts_api_configured===false
-    ?"Токен Alerts.in.ua не налаштовано."
-    :"Очікуємо дані від Alerts.in.ua.";
-   previousAlert=null;
-   return;
+    if (!response.ok) {
+      throw new Error("HTTP "+response.status);
+    }
+
+    const data=await response.json();
+    const meta=data._meta || {};
+
+    const region=
+      data["Львівська область"] ||
+      data["Львівська"] ||
+      {};
+
+    const state=typeof region==="string"
+      ? region
+      : (region.state || region.status || "unk");
+
+    if (meta.fresh !== true) {
+      setAlert(
+        "⚠️ Немає актуальних даних про тривоги",
+        "warn"
+      );
+
+      document.getElementById("connection").textContent =
+        "⚠️ Дані недоступні";
+
+      document.getElementById("updated").textContent =
+        meta.alerts_api_configured === false
+          ? "Токен Alerts.in.ua не налаштовано."
+          : "Очікуємо відповідь від Alerts.in.ua.";
+
+      previousAlert=null;
+      return;
+    }
+
+    const isAlert=state==="alert";
+
+    if (state==="alert") {
+      setAlert(
+        "🔴 Повітряна тривога у Львівській області",
+        "alert"
+      );
+    } else if (state==="calm") {
+      setAlert(
+        "🟢 Обласної тривоги не зафіксовано",
+        "calm"
+      );
+    } else if (state==="warn") {
+      setAlert(
+        "🟡 Є повідомлення про можливу загрозу",
+        "warn"
+      );
+    } else {
+      setAlert(
+        "⚠️ Статус області невідомий",
+        "warn"
+      );
+    }
+
+    if (previousAlert===false && isAlert) {
+      beep();
+    }
+
+    previousAlert =
+      state==="alert" || state==="calm"
+        ? isAlert
+        : null;
+
+    document.getElementById("connection").textContent =
+      "🟢 Дані актуальні";
+
+    document.getElementById("updated").textContent =
+      "Оновлено: "+
+      (meta.updated_at
+        ? new Date(meta.updated_at).toLocaleString("uk-UA")
+        : "час невідомий");
+
+  } catch (error) {
+    setAlert(
+      "⚠️ Немає зв'язку із сервером тривог",
+      "warn"
+    );
+
+    document.getElementById("connection").textContent =
+      "🔴 Помилка API";
+
+    document.getElementById("updated").textContent =
+      error.message;
+
+    previousAlert=null;
   }
-
-  const isAlert=state==="alert";
-
-  if(isAlert){
-   setAlert("🔴 Повітряна тривога у Львівській області","alert");
-  }else if(state==="calm"){
-   setAlert("🟢 Обласної тривоги не зафіксовано","calm");
-  }else if(state==="warn"){
-   setAlert("🟡 Є повідомлення про можливу загрозу","warn");
-  }else{
-   setAlert("⚠️ Статус області невідомий","warn");
-  }
-
-  if(previousAlert===false&&isAlert)beep();
-  previousAlert=(state==="alert"||state==="calm")?isAlert:null;
-
-  document.getElementById("connection").textContent="● Дані оновлюються";
-  document.getElementById("updated").textContent=
-   "Оновлено: "+(meta.updated_at?
-   new Date(meta.updated_at).toLocaleString("uk-UA"):
-   "час невідомий");
-
- }catch(error){
-  setAlert("⚠️ Немає зв'язку із сервером тривог","warn");
-  document.getElementById("connection").textContent="API недоступний";
-  document.getElementById("updated").textContent=error.message;
-  previousAlert=null;
- }
 }
 
+// Запуск
 fitRadius();
 updateStatus();
+
 setInterval(updateStatus,20000);
 
-window.addEventListener("load",()=>map.invalidateSize());
+window.addEventListener("load", () => {
+  map.invalidateSize();
+});
 </script>
+
 </body>
 </html>
