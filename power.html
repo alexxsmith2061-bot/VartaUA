@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101722">
+<title>Світло Львівщини — VartaUA</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101722;color:#edf3fa;font:15px Arial,sans-serif}
+header{background:#172333;border-bottom:1px solid #35465b;padding:18px 5%}
+h1{margin:0;color:#72bbff;font-size:25px}
+h2{font-size:19px}
+a{color:#85c7ff}
+main{max-width:1000px;margin:auto;padding:20px}
+.panel{background:#203044;border:1px solid #344a63;border-radius:14px;padding:20px;margin:15px 0}
+.muted{color:#afc1d3;font-size:13px;line-height:1.6}
+input,select,button{padding:12px;border:1px solid #4a637c;background:#142235;color:white;border-radius:8px;font-size:15px}
+input{width:100%;margin:7px 0}
+button{cursor:pointer}
+button:hover{background:#2b4968}
+.primary{background:#2676b6}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.notice{background:#654c2a;padding:14px;border-radius:9px;line-height:1.6}
+.post{padding:15px 0;border-bottom:1px solid #3d5168}
+.post:last-child{border:0}
+.post p{line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.date{font-size:12px;color:#aebed0}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.actions a{display:inline-block;background:#284563;padding:11px;border-radius:8px;text-decoration:none}
+@media(max-width:700px){.grid{grid-template-columns:1fr}main{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+<h1>⚡ VartaUA · Світло Львівщини</h1>
+<p class="muted">Графіки, аварійні відключення та офіційні повідомлення</p>
+<a href="/">← Повернутися до карти</a>
+</header>
+<main>
+<div class="notice">
+<strong>⚠️ Важливо</strong>
+<div>Аварійні відключення можуть не відповідати погодинним графікам. Перевіряйте стан за адресою на сайті Львівобленерго.</div>
+</div>
+
+<div class="grid">
+<section class="panel">
+<h2>🏠 Перевірити свою адресу</h2>
+<label for="town">Населений пункт</label>
+<input id="town" placeholder="Львів, Стрий, Дрогобич...">
+<label for="street">Вулиця / будинок</label>
+<input id="street" placeholder="Шевченка, 25">
+<p class="muted">Адреса зберігається тільки у вашому браузері. Для визначення черги скористайтеся офіційною формою.</p>
+<button class="primary" id="save">Запам'ятати адресу</button>
+<div class="actions">
+<a href="https://poweron.loe.lviv.ua/shedule-off" target="_blank" rel="noopener">📅 Знайти графік</a>
+<a href="https://poweron.loe.lviv.ua/" target="_blank" rel="noopener">🔎 Чому немає світла?</a>
+</div>
+<p class="muted" id="saved"></p>
+</section>
+
+<section class="panel">
+<h2>📊 Джерела графіків</h2>
+<p>Офіційний сервіс Львівобленерго дозволяє визначати чергу за населеним пунктом і адресою.</p>
+<p class="muted">Години відключень не завантажуються в цю сторінку автоматично, доки не буде підтверджено надійний спосіб отримання актуального розкладу.</p>
+<div class="actions">
+<a href="https://t.me/lvivoblenergo" target="_blank" rel="noopener">💡 Новини Львівобленерго</a>
+<a href="https://loe.lviv.ua/" target="_blank" rel="noopener">🌐 Офіційний сайт</a>
+</div>
+</section>
+</div>
+
+<section class="panel">
+<h2>📡 Оперативні повідомлення</h2>
+<p class="muted" id="feedStatus">Завантаження...</p>
+<div id="feed"></div>
+<button id="refresh">↻ Оновити повідомлення</button>
+</section>
+</main>
+
+<script>
+"use strict";
+const town=document.getElementById("town");
+const street=document.getElementById("street");
+const saved=document.getElementById("saved");
+const feed=document.getElementById("feed");
+const feedStatus=document.getElementById("feedStatus");
+
+try{
+ const previous=JSON.parse(localStorage.getItem("vartaua_power_address")||"{}");
+ town.value=previous.town||"";
+ street.value=previous.street||"";
+}catch(e){}
+
+document.getElementById("save").onclick=()=>{
+ localStorage.setItem("vartaua_power_address",
+  JSON.stringify({town:town.value.trim(),street:street.value.trim()}));
+ saved.textContent="Адресу збережено в цьому браузері.";
+};
+
+async function loadFeed(){
+ feedStatus.textContent="Перевірка повідомлень...";
+ try{
+  const response=await fetch("/api/power",{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const data=await response.json();
+  feed.replaceChildren();
+
+  if(!data.items || !data.items.length){
+   feedStatus.textContent="Немає доступних повідомлень. Перевірте офіційний канал.";
+   return;
+  }
+
+  feedStatus.textContent="Джерело: Львівобленерго · Оновлено: "+
+   new Date(data.checked_at).toLocaleString("uk-UA");
+
+  for(const item of data.items){
+   const article=document.createElement("article");
+   article.className="post";
+   const time=document.createElement("div");
+   time.className="date";
+   time.textContent=item.date||"Час не вказано";
+   const content=document.createElement("p");
+   content.textContent=item.text;
+   const link=document.createElement("a");
+   link.href=item.url;
+   link.target="_blank";
+   link.rel="noopener noreferrer";
+   link.textContent="Відкрити оригінал ↗";
+   article.append(time,content,link);
+   feed.append(article);
+  }
+ }catch(error){
+  feedStatus.textContent="Стрічка тимчасово недоступна.";
+ }
+}
+
+document.getElementById("refresh").onclick=loadFeed;
+loadFeed();
+setInterval(loadFeed,120000);
+</script>
+</body>
+</html>
