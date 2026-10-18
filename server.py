@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from power_routes import router as power_router
+from accounts import router as account_router, init_database
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vartaua")
@@ -17,6 +18,7 @@ app = FastAPI(title="VartaUA")
 
 # Підключення модуля електроенергії
 app.include_router(power_router)
+app.include_router(account_router)
 
 ALERTS_TOKEN = os.getenv("ALERTS_IN_UA_TOKEN", "").strip()
 
@@ -163,6 +165,7 @@ async def poll_alerts():
 
 @app.on_event("startup")
 async def startup():
+    init_database()
     app.state.alerts_task = asyncio.create_task(
         poll_alerts()
     )
