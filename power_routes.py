@@ -1,264 +1,277 @@
 
 import asyncio
-import logging
+import re
 import time
 from datetime import datetime, timezone
-from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import quote
 
 import httpx
-from fastapi import APIRouter
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse, Response
 
 router = APIRouter()
-log = logging.getLogger("vartaua.power")
+BASE = Path(__file__).resolve().parent
 
-BASE_DIR = Path(__file__).resolve().parent
-
-CHANNEL = "lvivoblenergo"
-TELEGRAM_URL = f"https://t.me/s/{CHANNEL}"
-SCHEDULE_URL = "https://dkr.ova.net.ua/api/schedule"
+OWNER = "yaroslav2901"
+REPO = "OE_OUTAGE_DATA"
+API = f"https://api.github.com/repos/{OWNER}/{REPO}/contents"
 
 QUEUES = [
     "1.1", "1.2", "2.1", "2.2",
     "3.1", "3.2", "4.1", "4.2",
-    "5.1", "5.2", "6.1", "6.2",
+    "5.1", "5.2", "6.1", "6.2"
 ]
 
-feed_cache = {
-    "items": [],
-    "checked_at": None,
-    "attempted_at": 0.0,
-    "error": None,
+HEADERS = {
+    "Accept": "application/vnd.github+json",
+    "User-Agent": "VartaUA-Power/2.0"
 }
 
-schedule_cache = {
+_cache = {
+    "updated": 0,
+    "checked_at": None,
     "data": None,
-    "checked_at": None,
-    "attempted_at": 0.0,
-    "error": None,
+    "images": {},
+    "source_updated": None,
+    "error": None
 }
 
-feed_lock = asyncio.Lock()
-schedule_lock = asyncio.Lock()
+_lock = asyncio.Lock()
 
 
-def utc_now():
-    return datetime.now(timezone.utc).isoformat()
+def matches_lviv(name):
+    return bool(
+        re.search(
+            r"lviv|льв|loe",
+            name,
+            re.IGNORECASE
+        )
+    )
 
 
-class TelegramParser(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.items = []
-        self.current = None
-        self.wrap_depth = 0
-        self.text_depth = 0
+async def get_json(client, url):
+    response = await client.get(url)
+    response.raise_for_status()
+    return response.json()
 
-    def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
-        classes = attrs.get("class", "").split()
 
-        if "tgme_widget_message_wrap" in classes:
-            self.current = {
-                "text": "",
-                "date": "",
-                "url": "",
-            }
-            self.wrap_depth = 1
-            self.text_depth = 0
-            return
+async def find_file(client, directory, extension):
+    entries = await get_json(
+        client,
+        f"{API}/{directory}"
+    )
 
-        if self.current is None:
-            return
+    if not isinstance(entries, list):
+        return None
 
-        if tag == "div":
-            self.wrap_depth += 1
-
-        if "tgme_widget_message_text" in classes:
-            self.text_depth = 1
-        elif self.text_depth and tag not in (
-            "br", "img", "input", "meta"
-        ):
-            self.text_depth += 1
-
+    for entry in entries:
+        name = entry.get("name", "")
         if (
-            tag == "a"
-            and "tgme_widget_message_date" in classes
+            matches_lviv(name)
+            and name.lower().endswith(extension)
+            and entry.get("type") == "file"
         ):
-            self.current["url"] = attrs.get("href", "")
+            return entry
 
-        if tag == "time":
-            self.current["date"] = attrs.get(
-                "datetime", ""
-            )
+    return None
 
-        if tag == "br" and self.text_depth:
-            self.current["text"] += "\n"
 
-    def handle_data(self, data):
-        if self.current and self.text_depth:
-            self.current["text"] += data
+async def find_image_directory(client):
+    entries = await get_json(client, f"{API}/images")
 
-    def handle_endtag(self, tag):
-        if self.current is None:
+    if not isinstance(entries, list):
+        return None
+
+    for entry in entries:
+        if (
+            entry.get("type") == "dir"
+            and matches_lviv(entry.get("name", ""))
+        ):
+            return entry.get("path")
+
+    return None
+
+
+async def update_cache():
+    now = time.monotonic()
+
+    async with _lock:
+        if now - _cache["updated"] < 300:
             return
 
-        if tag == "div":
-            self.wrap_depth -= 1
-
-        if self.text_depth and tag not in (
-            "br", "img", "input", "meta"
-        ):
-            self.text_depth -= 1
-
-        if self.wrap_depth <= 0:
-            item = self.current
-            self.current = None
-            self.text_depth = 0
-
-            item["text"] = " ".join(
-                item["text"].split()
-            )
-
-            if (
-                item["text"]
-                and item["url"].startswith(
-                    f"https://t.me/{CHANNEL}/"
-                )
-            ):
-                self.items.append(item)
-
-
-async def get_feed():
-    async with feed_lock:
-        now = time.monotonic()
-
-        if now - feed_cache["attempted_at"] < 120:
-            return feed_cache
-
-        feed_cache["attempted_at"] = now
+        _cache["updated"] = now
 
         try:
             async with httpx.AsyncClient(
-                timeout=15,
+                timeout=20,
                 follow_redirects=True,
+                headers=HEADERS
             ) as client:
-                response = await client.get(
-                    TELEGRAM_URL,
-                    headers={
-                        "User-Agent": "Mozilla/5.0"
-                    },
-                )
-                response.raise_for_status()
 
-            parser = TelegramParser()
-            parser.feed(response.text)
-
-            unique = {
-                item["url"]: item
-                for item in parser.items
-            }
-
-            if not unique:
-                raise ValueError(
-                    "Не вдалося прочитати повідомлення"
+                file = await find_file(
+                    client, "data", ".json"
                 )
 
-            feed_cache["items"] = list(
-                reversed(list(unique.values()))
-            )[:15]
+                if not file:
+                    raise ValueError(
+                        "Файл графіків Львівщини не знайдено"
+                    )
 
-            feed_cache["checked_at"] = utc_now()
-            feed_cache["error"] = None
+                download_url = file.get("download_url")
+
+                if not download_url:
+                    raise ValueError(
+                        "Немає адреси JSON"
+                    )
+
+                data = await get_json(
+                    client, download_url
+                )
+
+                if not isinstance(data, dict):
+                    raise ValueError(
+                        "Неправильний формат JSON"
+                    )
+
+                image_directory = (
+                    await find_image_directory(client)
+                )
+
+                images = {}
+
+                if image_directory:
+                    entries = await get_json(
+                        client,
+                        f"{API}/{image_directory}"
+                    )
+
+                    if isinstance(entries, list):
+                        for entry in entries:
+                            name = entry.get(
+                                "name", ""
+                            ).lower()
+
+                            for queue in QUEUES:
+                                expected = (
+                                    "gpv-"
+                                    + queue.replace(".", "-")
+                                    + ".png"
+                                )
+
+                                if name == expected:
+                                    images[queue] = (
+                                        entry.get("download_url")
+                                    )
+
+                _cache["data"] = data
+                _cache["images"] = images
+                _cache["source_updated"] = (
+                    data.get("lastUpdated")
+                    or data.get("fact", {}).get("update")
+                    if isinstance(
+                        data.get("fact"), dict
+                    )
+                    else data.get("lastUpdated")
+                )
+
+                _cache["checked_at"] = (
+                    datetime.now(
+                        timezone.utc
+                    ).isoformat()
+                )
+
+                _cache["error"] = None
 
         except Exception as exc:
-            log.warning("Power feed: %s", exc)
-            feed_cache["error"] = str(exc)
-
-        return feed_cache
+            _cache["error"] = str(exc)
 
 
-async def get_schedule():
-    async with schedule_lock:
-        now = time.monotonic()
+def get_date_keys(data):
+    fact = data.get("fact", {})
 
-        if (
-            now - schedule_cache["attempted_at"]
-            < 300
-        ):
-            return schedule_cache
+    if not isinstance(fact, dict):
+        return []
 
-        schedule_cache["attempted_at"] = now
+    days = fact.get("data", {})
 
-        try:
-            async with httpx.AsyncClient(
-                timeout=15,
-                follow_redirects=True,
-            ) as client:
-                response = await client.get(
-                    SCHEDULE_URL,
-                    headers={
-                        "Accept": "application/json",
-                        "User-Agent": "VartaUA/1.0",
-                    },
-                )
-                response.raise_for_status()
-                data = response.json()
+    if not isinstance(days, dict):
+        return []
 
-            if not isinstance(data, (dict, list)):
-                raise ValueError(
-                    "Невідомий формат графіків"
-                )
-
-            if not data:
-                raise ValueError(
-                    "Джерело повернуло порожні дані"
-                )
-
-            schedule_cache["data"] = data
-            schedule_cache["checked_at"] = utc_now()
-            schedule_cache["error"] = None
-
-        except Exception as exc:
-            log.warning("Power schedule: %s", exc)
-            schedule_cache["error"] = str(exc)
-
-        return schedule_cache
+    return list(days.keys())
 
 
 @router.get("/power")
 async def power_page():
-    return FileResponse(
-        BASE_DIR / "power.html"
-    )
-
-
-@router.get("/api/power")
-async def power_feed():
-    cache = await get_feed()
-
-    return {
-        "source": TELEGRAM_URL,
-        "items": cache["items"],
-        "checked_at": cache["checked_at"],
-        "error": cache["error"],
-    }
+    return FileResponse(BASE / "power.html")
 
 
 @router.get("/api/power/schedule")
-async def power_schedule():
-    cache = await get_schedule()
+async def schedule():
+    await update_cache()
+
+    data = _cache["data"] or {}
+    images = _cache["images"]
 
     return {
-        "source": SCHEDULE_URL,
-        "source_type": "third_party",
-        "queues": QUEUES,
-        "data": cache["data"],
-        "checked_at": cache["checked_at"],
-        "error": cache["error"],
-        "available": (
-            cache["data"] is not None
-            and cache["error"] is None
+        "source": (
+            f"https://github.com/{OWNER}/{REPO}"
         ),
+        "checked_at": _cache["checked_at"],
+        "source_updated": _cache["source_updated"],
+        "error": _cache["error"],
+        "queues": QUEUES,
+        "images": list(images.keys()),
+        "dates": get_date_keys(data),
+        "available": bool(images),
+        "has_json": bool(data)
     }
+
+
+@router.get("/api/power/image/{queue}")
+async def power_image(queue: str):
+    if queue not in QUEUES:
+        raise HTTPException(
+            status_code=404,
+            detail="Невідома черга"
+        )
+
+    await update_cache()
+
+    url = _cache["images"].get(queue)
+
+    if not url:
+        raise HTTPException(
+            status_code=404,
+            detail="Зображення графіка недоступне"
+        )
+
+    try:
+        async with httpx.AsyncClient(
+            timeout=20,
+            follow_redirects=True,
+            headers=HEADERS
+        ) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+
+        if not response.headers.get(
+            "content-type", ""
+        ).startswith("image/"):
+            raise ValueError(
+                "Джерело не повернуло зображення"
+            )
+
+        return Response(
+            content=response.content,
+            media_type="image/png",
+            headers={
+                "Cache-Control": "public, max-age=300"
+            }
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail="Не вдалося завантажити графік"
+        )
