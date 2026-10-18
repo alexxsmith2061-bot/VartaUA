@@ -72,7 +72,10 @@ def verify_telegram_init_data(raw: str, now: int | None = None) -> dict:
         raise HTTPException(503, "Telegram-авторизацію не налаштовано")
     if len(raw) > 8192:
         raise HTTPException(401, "Неправильні дані авторизації")
-    pairs = parse_qsl(raw, keep_blank_values=True, strict_parsing=True)
+    try:
+        pairs = parse_qsl(raw, keep_blank_values=True, strict_parsing=True)
+    except ValueError:
+        raise HTTPException(401, "Неправильні дані авторизації")
     data = dict(pairs)
     if len(pairs) != len(data) or "hash" not in data:
         raise HTTPException(401, "Неправильні дані авторизації")
