@@ -8,136 +8,501 @@
 <title>Світло Львівщини — VartaUA</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101722;color:#edf3fa;font:15px Arial,sans-serif}
-header{background:#172333;border-bottom:1px solid #35465b;padding:18px 5%}
-h1{margin:0;color:#72bbff;font-size:25px}
-h2{font-size:19px}
-a{color:#85c7ff}
-main{max-width:1000px;margin:auto;padding:20px}
-.panel{background:#203044;border:1px solid #344a63;border-radius:14px;padding:20px;margin:15px 0}
-.muted{color:#afc1d3;font-size:13px;line-height:1.6}
-input,select,button{padding:12px;border:1px solid #4a637c;background:#142235;color:white;border-radius:8px;font-size:15px}
-input{width:100%;margin:7px 0}
-button{cursor:pointer}
-button:hover{background:#2b4968}
-.primary{background:#2676b6}
+body{margin:0;background:#101722;color:#eef5ff;font:15px Arial,sans-serif}
+header{padding:20px 5%;background:#19283a;border-bottom:1px solid #344a62}
+h1{margin:0 0 10px;color:#82c8ff;font-size:26px}
+h2{font-size:20px;margin:0 0 16px}
+a{color:#8acbff}
+main{max-width:1100px;margin:auto;padding:18px}
+.panel{background:#1d2b3e;border:1px solid #354a61;border-radius:14px;padding:20px;margin:14px 0}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
-.notice{background:#654c2a;padding:14px;border-radius:9px;line-height:1.6}
-.post{padding:15px 0;border-bottom:1px solid #3d5168}
+.muted{color:#aec0d2;font-size:13px;line-height:1.6}
+.warning{background:#4c3d29;border:1px solid #85663d;padding:14px;border-radius:10px;line-height:1.6}
+input,select,button{font:inherit;border:1px solid #526b85;border-radius:9px;background:#112033;color:white;padding:12px}
+input,select{width:100%;margin:7px 0 13px}
+button{cursor:pointer;background:#286aa0}
+button:hover{background:#347fbf}
+.queueGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.queue{background:#273a50}
+.queue.active{background:#147cc1;border-color:#9ad7ff}
+.timeline{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;margin:14px 0 6px}
+.hour{height:40px;background:#34485e;border-radius:3px}
+.hour.off{background:#e16c64}
+.hour.maybe{background:#e7b85b}
+.hour.on{background:#55b98d}
+.labels{display:flex;justify-content:space-between;color:#b3c3d5;font-size:12px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:13px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px}
+.offDot{background:#e16c64}
+.maybeDot{background:#e7b85b}
+.onDot{background:#55b98d}
+.unknownDot{background:#34485e}
+.post{padding:15px 0;border-bottom:1px solid #3a4f67}
 .post:last-child{border:0}
-.post p{line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
-.date{font-size:12px;color:#aebed0}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-.actions a{display:inline-block;background:#284563;padding:11px;border-radius:8px;text-decoration:none}
-@media(max-width:700px){.grid{grid-template-columns:1fr}main{padding:12px}}
+.post p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.actions a{padding:11px 13px;background:#2b4561;text-decoration:none;border-radius:8px}
+.status{padding:12px;border-radius:9px;background:#26384b;line-height:1.6}
+#suggestions{display:none;border:1px solid #526b85;border-radius:8px;overflow:hidden}
+#suggestions button{display:block;width:100%;text-align:left;border:0;border-radius:0;background:#263e58}
+#suggestions button:hover{background:#365b7e}
+@media(max-width:720px){
+.grid{grid-template-columns:1fr}
+.queueGrid{grid-template-columns:repeat(3,1fr)}
+main{padding:10px}
+.panel{padding:15px}
+}
 </style>
 </head>
 <body>
 <header>
 <h1>⚡ VartaUA · Світло Львівщини</h1>
-<p class="muted">Графіки, аварійні відключення та офіційні повідомлення</p>
-<a href="/">← Повернутися до карти</a>
+<a href="/">← Назад до карти</a>
 </header>
 <main>
-<div class="notice">
-<strong>⚠️ Важливо</strong>
-<div>Аварійні відключення можуть не відповідати погодинним графікам. Перевіряйте стан за адресою на сайті Львівобленерго.</div>
+
+<div class="warning">
+<strong>Увага!</strong>
+Аварійні відключення можуть не відповідати
+погодинним графікам. Дані графіків надходять
+зі стороннього сервісу та потребують перевірки.
 </div>
 
 <div class="grid">
 <section class="panel">
-<h2>🏠 Перевірити свою адресу</h2>
+<h2>📍 Моя адреса</h2>
+
 <label for="town">Населений пункт</label>
-<input id="town" placeholder="Львів, Стрий, Дрогобич...">
-<label for="street">Вулиця / будинок</label>
-<input id="street" placeholder="Шевченка, 25">
-<p class="muted">Адреса зберігається тільки у вашому браузері. Для визначення черги скористайтеся офіційною формою.</p>
-<button class="primary" id="save">Запам'ятати адресу</button>
-<div class="actions">
-<a href="https://poweron.loe.lviv.ua/shedule-off" target="_blank" rel="noopener">📅 Знайти графік</a>
-<a href="https://poweron.loe.lviv.ua/" target="_blank" rel="noopener">🔎 Чому немає світла?</a>
-</div>
+<input id="town" autocomplete="off"
+placeholder="Почни вводити назву...">
+<div id="suggestions"></div>
+
+<label for="street">Вулиця та будинок</label>
+<input id="street"
+placeholder="Наприклад, Шевченка, 25">
+
+<p class="muted">
+Пошук населеного пункту має локальні підказки.
+Це ще не офіційний довідник усіх адрес Львівщини.
+Автоматичне визначення черги за адресою
+поки недоступне.
+</p>
+
+<button id="save">Зберегти адресу</button>
 <p class="muted" id="saved"></p>
-</section>
 
-<section class="panel">
-<h2>📊 Джерела графіків</h2>
-<p>Офіційний сервіс Львівобленерго дозволяє визначати чергу за населеним пунктом і адресою.</p>
-<p class="muted">Години відключень не завантажуються в цю сторінку автоматично, доки не буде підтверджено надійний спосіб отримання актуального розкладу.</p>
 <div class="actions">
-<a href="https://t.me/lvivoblenergo" target="_blank" rel="noopener">💡 Новини Львівобленерго</a>
-<a href="https://loe.lviv.ua/" target="_blank" rel="noopener">🌐 Офіційний сайт</a>
+<a href="https://poweron.loe.lviv.ua/"
+target="_blank" rel="noopener">
+Перевірити чергу за адресою ↗
+</a>
 </div>
+</section>
+
+<section class="panel">
+<h2>🔌 Моя черга</h2>
+<p class="muted">
+Якщо знаєш свою чергу, вибери її.
+Вибір збережеться в браузері.
+</p>
+<div class="queueGrid" id="queueGrid"></div>
+<p id="selectedQueue"></p>
+<p class="muted">
+Черги можуть змінюватися після оновлення
+розподілу адрес Львівобленерго.
+</p>
 </section>
 </div>
 
 <section class="panel">
-<h2>📡 Оперативні повідомлення</h2>
-<p class="muted" id="feedStatus">Завантаження...</p>
-<div id="feed"></div>
-<button id="refresh">↻ Оновити повідомлення</button>
+<h2>📅 Графік відключень</h2>
+
+<div class="status" id="scheduleStatus">
+Завантаження графіка...
+</div>
+
+<div class="timeline" id="timeline"></div>
+<div class="labels">
+<span>00:00</span>
+<span>06:00</span>
+<span>12:00</span>
+<span>18:00</span>
+<span>24:00</span>
+</div>
+
+<div class="legend">
+<span><i class="dot offDot"></i>Відключення</span>
+<span><i class="dot maybeDot"></i>Можливе</span>
+<span><i class="dot onDot"></i>Світло</span>
+<span><i class="dot unknownDot"></i>Немає даних</span>
+</div>
+
+<p class="muted" id="scheduleTime"></p>
+<button id="refreshSchedule">↻ Оновити графік</button>
+
+<div class="actions">
+<a href="https://dkr.ova.net.ua/"
+target="_blank" rel="noopener">
+Джерело графіків ↗
+</a>
+<a href="https://poweron.loe.lviv.ua/"
+target="_blank" rel="noopener">
+Львівобленерго ↗
+</a>
+</div>
 </section>
+
+<section class="panel">
+<h2>📡 Повідомлення Львівобленерго</h2>
+<p class="muted" id="feedStatus">
+Завантаження...
+</p>
+<div id="feed"></div>
+<button id="refreshFeed">↻ Оновити новини</button>
+</section>
+
 </main>
 
 <script>
 "use strict";
-const town=document.getElementById("town");
-const street=document.getElementById("street");
-const saved=document.getElementById("saved");
-const feed=document.getElementById("feed");
-const feedStatus=document.getElementById("feedStatus");
+
+const QUEUES=[
+"1.1","1.2","2.1","2.2",
+"3.1","3.2","4.1","4.2",
+"5.1","5.2","6.1","6.2"
+];
+
+const TOWNS=[
+"Львів","Стрий","Дрогобич","Самбір",
+"Трускавець","Борислав","Стебник",
+"Червоноград","Шептицький","Сокаль",
+"Жовква","Рава-Руська","Городок",
+"Пустомити","Миколаїв","Новий Розділ",
+"Жидачів","Ходорів","Золочів",
+"Броди","Буськ","Перемишляни",
+"Кам'янка-Бузька","Радехів",
+"Белз","Добротвір","Соснівка",
+"Мостиська","Судова Вишня",
+"Яворів","Новояворівськ","Шкло",
+"Турка","Сколе","Славсько",
+"Старий Самбір","Добромиль",
+"Хирів","Рудки","Комарно",
+"Бібрка","Винники","Дубляни",
+"Брюховичі","Рудне","Щирець",
+"Оброшине","Солонка","Зимна Вода",
+"Сокільники","Муроване",
+"Великі Мости","Глиняни","Поморяни",
+"Підкамінь","Олесько","Красне",
+"Івано-Франкове","Меденичі",
+"Східниця","Моршин","Дашава",
+"Нижанковичі","Новий Калинів",
+"Лопатин","Заболотці","Підбуж",
+"Бориня","Верхня Синьовидне"
+];
+
+const $=id=>document.getElementById(id);
+
+let queue=localStorage.getItem("vartaua_queue")||"";
+let scheduleData=null;
+let scheduleAvailable=false;
 
 try{
- const previous=JSON.parse(localStorage.getItem("vartaua_power_address")||"{}");
- town.value=previous.town||"";
- street.value=previous.street||"";
+ const address=JSON.parse(
+  localStorage.getItem("vartaua_address")||"{}"
+ );
+ $("town").value=address.town||"";
+ $("street").value=address.street||"";
 }catch(e){}
 
-document.getElementById("save").onclick=()=>{
- localStorage.setItem("vartaua_power_address",
-  JSON.stringify({town:town.value.trim(),street:street.value.trim()}));
- saved.textContent="Адресу збережено в цьому браузері.";
+function normalize(s){
+ return String(s).toLocaleLowerCase("uk-UA").trim();
+}
+
+$("town").addEventListener("input",()=>{
+ const query=normalize($("town").value);
+ const suggestions=$("suggestions");
+ suggestions.replaceChildren();
+
+ if(query.length<2){
+  suggestions.style.display="none";
+  return;
+ }
+
+ const matches=TOWNS.filter(
+  x=>normalize(x).includes(query)
+ ).slice(0,8);
+
+ for(const name of matches){
+  const button=document.createElement("button");
+  button.textContent=name;
+  button.onclick=()=>{
+   $("town").value=name;
+   suggestions.style.display="none";
+  };
+  suggestions.append(button);
+ }
+
+ suggestions.style.display=matches.length
+  ?"block":"none";
+});
+
+$("save").onclick=()=>{
+ localStorage.setItem("vartaua_address",
+  JSON.stringify({
+   town:$("town").value.trim(),
+   street:$("street").value.trim()
+  })
+ );
+ $("saved").textContent=
+  "Адресу збережено у твоєму браузері.";
 };
 
-async function loadFeed(){
- feedStatus.textContent="Перевірка повідомлень...";
- try{
-  const response=await fetch("/api/power",{cache:"no-store"});
-  if(!response.ok)throw new Error("HTTP "+response.status);
-  const data=await response.json();
-  feed.replaceChildren();
+function renderQueues(){
+ const container=$("queueGrid");
+ container.replaceChildren();
 
-  if(!data.items || !data.items.length){
-   feedStatus.textContent="Немає доступних повідомлень. Перевірте офіційний канал.";
+ for(const value of QUEUES){
+  const button=document.createElement("button");
+  button.className="queue"+(
+   value===queue?" active":""
+  );
+  button.textContent=value;
+
+  button.onclick=()=>{
+   queue=value;
+   localStorage.setItem("vartaua_queue",queue);
+   renderQueues();
+   renderSchedule();
+  };
+
+  container.append(button);
+ }
+
+ $("selectedQueue").textContent=queue
+  ?"Обрана черга: "+queue
+  :"Чергу ще не вибрано";
+}
+
+function unknownTimeline(){
+ const timeline=$("timeline");
+ timeline.replaceChildren();
+
+ for(let h=0;h<24;h++){
+  const cell=document.createElement("div");
+  cell.className="hour";
+  cell.title=String(h).padStart(2,"0")+":00";
+  timeline.append(cell);
+ }
+}
+
+/*
+Підтримка лише явно розпізнаних форматів.
+Невідомі структури не трактуються як
+підтверджений розклад.
+*/
+function extractHours(data,selected){
+ if(!data || !selected)return null;
+
+ let root=data;
+
+ if(root.data && typeof root.data==="object"){
+  root=root.data;
+ }
+
+ let entry=null;
+
+ if(!Array.isArray(root)){
+  entry=root[selected]||
+   root.groups?.[selected]||
+   root.queues?.[selected]||
+   root.schedule?.[selected]||
+   root.schedules?.[selected];
+ }
+
+ if(!entry || typeof entry!=="object"){
+  return null;
+ }
+
+ if(entry.hours && Array.isArray(entry.hours)){
+  entry=entry.hours;
+ }
+
+ if(!Array.isArray(entry) || entry.length!==24){
+  return null;
+ }
+
+ const allowed={
+  "off":"off",
+  "outage":"off",
+  "no_power":"off",
+  "0":"off",
+  "maybe":"maybe",
+  "possible":"maybe",
+  "on":"on",
+  "power":"on",
+  "1":"on",
+  "unknown":"unknown"
+ };
+
+ const hours=[];
+
+ for(const value of entry){
+  let raw=value;
+
+  if(raw && typeof raw==="object"){
+   raw=raw.state??raw.status;
+  }
+
+  const state=allowed[String(raw).toLowerCase()];
+
+  if(!state)return null;
+
+  hours.push(state);
+ }
+
+ return hours;
+}
+
+function renderSchedule(){
+ unknownTimeline();
+
+ if(!queue){
+  $("scheduleStatus").textContent=
+   "Спочатку вибери свою чергу.";
+  return;
+ }
+
+ if(!scheduleAvailable){
+  $("scheduleStatus").textContent=
+   "Актуальний графік зараз недоступний. "+
+   "Перевір джерело або спробуй пізніше.";
+  return;
+ }
+
+ const hours=extractHours(scheduleData,queue);
+
+ if(!hours){
+  $("scheduleStatus").textContent=
+   "Дані отримано, але формат графіка "+
+   "поки не розпізнано. "+
+   "Години відключень не підтверджені.";
+  return;
+ }
+
+ const cells=$("timeline").children;
+
+ hours.forEach((state,index)=>{
+  cells[index].className="hour "+
+   (state==="unknown"?"":state);
+  cells[index].title=
+   String(index).padStart(2,"0")+":00 — "+
+   state;
+ });
+
+ $("scheduleStatus").textContent=
+  "Графік для черги "+queue+
+  ". Зверни увагу: це сторонні дані.";
+}
+
+async function loadSchedule(){
+ $("scheduleStatus").textContent=
+  "Перевіряємо графіки...";
+
+ try{
+  const response=await fetch(
+   "/api/power/schedule",
+   {cache:"no-store"}
+  );
+
+  if(!response.ok){
+   throw new Error("HTTP "+response.status);
+  }
+
+  const result=await response.json();
+
+  scheduleData=result.data;
+  scheduleAvailable=result.available===true;
+
+  $("scheduleTime").textContent=
+   "Останнє успішне отримання: "+
+   (result.checked_at
+    ?new Date(result.checked_at)
+      .toLocaleString("uk-UA")
+    :"невідомо");
+
+  renderSchedule();
+
+ }catch(error){
+  scheduleAvailable=false;
+  renderSchedule();
+  $("scheduleTime").textContent=
+   "Помилка завантаження.";
+ }
+}
+
+async function loadFeed(){
+ $("feedStatus").textContent=
+  "Перевіряємо новини...";
+
+ try{
+  const response=await fetch(
+   "/api/power",
+   {cache:"no-store"}
+  );
+
+  if(!response.ok){
+   throw new Error("HTTP "+response.status);
+  }
+
+  const result=await response.json();
+  $("feed").replaceChildren();
+
+  if(!result.items?.length){
+   $("feedStatus").textContent=
+    "Повідомлення тимчасово недоступні.";
    return;
   }
 
-  feedStatus.textContent="Джерело: Львівобленерго · Оновлено: "+
-   new Date(data.checked_at).toLocaleString("uk-UA");
+  $("feedStatus").textContent=
+   "Джерело: офіційний Telegram-канал "+
+   "Львівобленерго.";
 
-  for(const item of data.items){
+  for(const item of result.items){
    const article=document.createElement("article");
    article.className="post";
-   const time=document.createElement("div");
-   time.className="date";
-   time.textContent=item.date||"Час не вказано";
+
+   const date=document.createElement("div");
+   date.className="muted";
+   date.textContent=item.date||"";
+
    const content=document.createElement("p");
-   content.textContent=item.text;
+   content.textContent=item.text||"";
+
    const link=document.createElement("a");
    link.href=item.url;
    link.target="_blank";
    link.rel="noopener noreferrer";
-   link.textContent="Відкрити оригінал ↗";
-   article.append(time,content,link);
-   feed.append(article);
+   link.textContent="Оригінал повідомлення ↗";
+
+   article.append(date,content,link);
+   $("feed").append(article);
   }
+
  }catch(error){
-  feedStatus.textContent="Стрічка тимчасово недоступна.";
+  $("feedStatus").textContent=
+   "Не вдалося отримати повідомлення.";
  }
 }
 
-document.getElementById("refresh").onclick=loadFeed;
+$("refreshSchedule").onclick=loadSchedule;
+$("refreshFeed").onclick=loadFeed;
+
+renderQueues();
+unknownTimeline();
+loadSchedule();
 loadFeed();
+
+setInterval(loadSchedule,300000);
 setInterval(loadFeed,120000);
 </script>
 </body>
