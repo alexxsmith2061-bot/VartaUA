@@ -1,341 +1,81 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
-
-<title>Світло Львівщини — VartaUA</title>
-
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Графіки світла Львівщини — VartaUA</title>
 <style>
-*{box-sizing:border-box}
-
-body{
- margin:0;
- background:#101722;
- color:#edf4ff;
- font:15px Arial,sans-serif;
-}
-
-header{
- background:#1c2b3e;
- padding:22px 5%;
- border-bottom:1px solid #3a5068;
-}
-
-h1{
- margin:0 0 12px;
- color:#81c8ff;
-}
-
-a{color:#91ccff}
-
-main{
- max-width:1000px;
- margin:auto;
- padding:20px;
-}
-
-.panel{
- background:#1d2d41;
- border:1px solid #39516b;
- border-radius:15px;
- padding:20px;
- margin-bottom:16px;
-}
-
-h2{margin-top:0}
-
-.queue-grid{
- display:grid;
- grid-template-columns:repeat(6,1fr);
- gap:10px;
-}
-
-button{
- background:#294561;
- color:white;
- border:1px solid #53718d;
- border-radius:9px;
- padding:14px;
- font-size:16px;
- cursor:pointer;
-}
-
-button:hover{background:#37618a}
-
-button.active{
- background:#167ec3;
- border-color:#a0d9ff;
-}
-
-.status{
- background:#293d53;
- border-radius:9px;
- padding:15px;
- line-height:1.7;
-}
-
-.muted{
- color:#b1c4d8;
- font-size:13px;
- line-height:1.6;
-}
-
-.warning{
- background:#4c3e2b;
- border:1px solid #8c6d43;
- padding:15px;
- border-radius:10px;
- line-height:1.6;
- margin-bottom:16px;
-}
-
-#scheduleImage{
- display:none;
- width:100%;
- height:auto;
- border-radius:10px;
- background:white;
- margin-top:20px;
-}
-
-.actions{
- display:flex;
- gap:10px;
- flex-wrap:wrap;
- margin-top:18px;
-}
-
-@media(max-width:700px){
- .queue-grid{
-  grid-template-columns:repeat(3,1fr);
- }
- main{padding:12px}
- .panel{padding:15px}
-}
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif;background:#101722;color:#edf4ff}
+*{box-sizing:border-box}body{margin:0}header{background:#1c2b3e;padding:22px max(16px,calc((100% - 1000px)/2));border-bottom:1px solid #39516b}h1{font-size:25px;margin:0 0 12px;color:#81c8ff}a{color:#91ccff}main{max-width:1000px;margin:auto;padding:20px}.panel{background:#1d2d41;border:1px solid #39516b;border-radius:15px;padding:20px;margin-bottom:16px}h2{margin-top:0;font-size:20px}.muted{color:#b1c4d8;font-size:14px;line-height:1.6}.queue-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}button{background:#294561;color:#fff;border:1px solid #53718d;border-radius:9px;padding:13px;font-size:16px;cursor:pointer}button.active{background:#167ec3;border-color:#a0d9ff}.status{padding:13px;background:#293d53;border-radius:9px;line-height:1.6}.warning{background:#4c3e2b;border:1px solid #8c6d43;border-radius:10px;padding:14px;line-height:1.6}.timeline{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;margin-top:18px}.slot{min-height:58px;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-align:center;gap:3px}.yes{background:#215b43}.no{background:#8b3038}.maybe{background:#796024}.first,.second{background:linear-gradient(90deg,#8b3038 50%,#215b43 50%)}.second{background:linear-gradient(90deg,#215b43 50%,#8b3038 50%)}.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:15px;font-size:13px}.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px}.actions{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap}select{background:#294561;color:white;padding:10px;border:1px solid #53718d;border-radius:8px}label{display:block;margin:15px 0 6px}@media(max-width:700px){main{padding:12px}.panel{padding:15px}.queue-grid{grid-template-columns:repeat(3,1fr)}.timeline{grid-template-columns:repeat(6,minmax(0,1fr))}.slot{min-height:52px;font-size:11px}}
 </style>
 </head>
-
 <body>
-
-<header>
-<h1>⚡ VartaUA · Світло Львівщини</h1>
-<a href="/">← Назад до карти</a>
-</header>
-
+<header><h1>⚡ VartaUA · Світло Львівщини</h1><a href="/">← Назад до карти</a></header>
 <main>
-
-<div class="warning">
-<strong>Важливо:</strong>
-графіки надходять від незалежного
-агрегатора даних. Під час аварійних
-відключень фактична ситуація може
-відрізнятися від планового розкладу.
-</div>
-
-<section class="panel">
-
-<h2>🔌 Обери свою чергу</h2>
-
-<p class="muted">
-Черга збережеться у твоєму браузері.
-</p>
-
-<div class="queue-grid" id="queues"></div>
-
+<div class="warning"><strong>Увага:</strong> показуємо опублікований графік погодинних відключень, а не фактичну наявність напруги в будинку. Аварійні та екстрені відключення можуть відрізнятися.</div>
+<section class="panel"><h2>🔌 Обери чергу</h2><p class="muted">Обрана черга зберігається лише у твоєму браузері.</p><div class="queue-grid" id="queues"></div></section>
+<section class="panel"><h2 id="title">📅 Графік відключень</h2><div id="status" class="status" role="status">Завантажуємо дані…</div>
+<label for="day">Дата графіка</label><select id="day" disabled><option>Завантаження…</option></select>
+<div id="timeline" class="timeline" aria-label="Погодинний графік"></div>
+<div id="legend" class="legend" hidden><span><i class="dot yes"></i>Світло є за графіком</span><span><i class="dot no"></i>Відключення</span><span><i class="dot maybe"></i>Можливе відключення</span><span>◩ Півгодинне відключення</span></div>
+<p class="muted" id="updated"></p><div class="actions"><button id="refresh">↻ Оновити дані</button></div>
 </section>
-
-<section class="panel">
-
-<h2 id="scheduleTitle">
-📅 Графік відключень
-</h2>
-
-<div class="status" id="status">
-Підключаємо джерело графіків...
-</div>
-
-<img
- id="scheduleImage"
- alt="Графік відключень електроенергії"
->
-
-<p class="muted" id="updated"></p>
-
-<div class="actions">
-<button id="refresh">
-↻ Оновити графік
-</button>
-</div>
-
-</section>
-
-<section class="panel">
-<h2>🏠 Як визначити свою чергу?</h2>
-
-<p>
-Номер черги залежить від конкретної
-адреси та може змінюватися.
-</p>
-
-<p class="muted">
-Автоматичне визначення черги за
-вулицею й будинком поки не підключено:
-джерело графіків не містить
-перевіреного адресного довідника.
-</p>
-
-<p>
-Після того як дізнаєшся чергу,
-вибери її вище — надалі VartaUA
-запам'ятає вибір.
-</p>
-
-</section>
-
+<section class="panel"><h2>🏠 Як визначити свою чергу?</h2><p class="muted">Визначення черги за адресою поки недоступне: офіційний адресний API повертає помилки. Не вгадуй чергу за сусідніми будинками. Коли знаєш свою чергу, вибери її вище.</p></section>
+<p class="muted">Джерело: <a href="https://github.com/yaroslav2901/OE_OUTAGE_DATA" target="_blank" rel="noopener noreferrer">OE_OUTAGE_DATA · Львівобленерго</a>. Дані незалежного агрегатора, не офіційний канал VartaUA.</p>
 </main>
-
 <script>
 "use strict";
-
-const QUEUES=[
- "1.1","1.2","2.1","2.2",
- "3.1","3.2","4.1","4.2",
- "5.1","5.2","6.1","6.2"
-];
-
+const QUEUES=Array.from({length:6},(_,i)=>[String(i+1)+".1",String(i+1)+".2"]).flat();
+const labels={yes:"Світло є",no:"Відключення",maybe:"Можливе відключення",first:"Без світла перші 30 хв",second:"Без світла другі 30 хв"};
 const $=id=>document.getElementById(id);
-
-let selected=localStorage.getItem(
- "vartaua_queue"
-)||"";
-
+let selected=QUEUES.includes(localStorage.getItem("vartaua_queue"))?localStorage.getItem("vartaua_queue"):"";
 let source=null;
-
-function renderButtons(){
+function buttons(){
  $("queues").replaceChildren();
-
- for(const queue of QUEUES){
-  const button=document.createElement("button");
-
-  button.textContent=queue;
-  button.className=(
-   queue===selected?"active":""
-  );
-
-  button.onclick=()=>{
-   selected=queue;
-
-   localStorage.setItem(
-    "vartaua_queue",selected
-   );
-
-   renderButtons();
-   renderSchedule();
-  };
-
-  $("queues").append(button);
+ for(const q of QUEUES){
+  const b=document.createElement("button");b.textContent=q;b.className=q===selected?"active":"";
+  b.setAttribute("aria-pressed",String(q===selected));
+  b.onclick=()=>{selected=q;localStorage.setItem("vartaua_queue",q);buttons();render()};
+  $("queues").append(b);
  }
 }
-
-function renderSchedule(){
- const image=$("scheduleImage");
-
- image.style.display="none";
- image.removeAttribute("src");
-
- if(!selected){
-  $("status").textContent=
-   "Обери свою чергу відключення.";
+function render(){
+ $("timeline").replaceChildren();$("legend").hidden=true;
+ $("title").textContent="📅 Графік"+(selected?" черги "+selected:"");
+ if(!source){$("status").textContent="Дані ще не завантажено.";return}
+ const day=$("day").value;
+ if(!selected){$("status").textContent="Оберіть свою чергу.";return}
+ const slots=source.days?.[day]?.[selected];
+ if(!Array.isArray(slots)||slots.length!==24){
+  $("status").textContent=source.stale?"Джерело давно не оновлювалося. Не показуємо застарілий графік.":source.error?"Немає актуальних даних. Помилка джерела: "+source.error:"Немає підтвердженого графіка на вибрану дату.";
   return;
  }
-
- $("scheduleTitle").textContent=
-  "📅 Графік черги "+selected;
-
- if(!source){
-  $("status").textContent=
-   "Перевіряємо доступність графіка...";
-  return;
- }
-
- if(!source.images.includes(selected)){
-  $("status").textContent=
-   "Графік для черги "+selected+
-   " зараз недоступний у джерелі.";
-  return;
- }
-
- $("status").textContent=
-  "Отримано графік черги "+selected+
-  ". Перевір дату на зображенні.";
-
- image.onload=()=>{
-  image.style.display="block";
- };
-
- image.onerror=()=>{
-  image.style.display="none";
-  $("status").textContent=
-   "Не вдалося завантажити зображення.";
- };
-
- image.src=
-  "/api/power/image/"+
-  encodeURIComponent(selected)+
-  "?v="+Date.now();
+ const isToday=day===source.today;
+ $("status").textContent=(isToday?"Сьогодні":"На "+day)+": опублікований план для черги "+selected+". Це не показник фактичного електропостачання.";
+ slots.forEach((state,i)=>{
+  const d=document.createElement("div");d.className="slot "+state;
+  const hour=document.createElement("span");hour.textContent=String(i).padStart(2,"0")+":00";
+  const symbol=document.createElement("span");symbol.textContent=({yes:"✓",no:"✕",maybe:"?",first:"◧",second:"◨"})[state]||"?";
+  d.title=hour.textContent+"–"+String(i+1).padStart(2,"0")+":00 · "+(labels[state]||"Невідомо");
+  d.setAttribute("aria-label",d.title);d.append(hour,symbol);$("timeline").append(d);
+ });
+ $("legend").hidden=false;
 }
-
 async function load(){
- $("status").textContent=
-  "Оновлюємо дані...";
-
+ $("status").textContent="Перевіряємо джерело…";
  try{
-  const response=await fetch(
-   "/api/power/schedule",
-   {cache:"no-store"}
-  );
-
-  if(!response.ok){
-   throw new Error(
-    "HTTP "+response.status
-   );
-  }
-
-  source=await response.json();
-
-  $("updated").textContent=
-   "Перевірено: "+
-   (source.checked_at
-    ?new Date(source.checked_at)
-      .toLocaleString("uk-UA")
-    :"невідомо")+
-   ". Оновлення джерела: "+
-   (source.source_updated||"невідомо");
-
-  renderSchedule();
-
-  if(source.error){
-   $("status").textContent+=
-    " Попередження: джерело має помилку.";
-  }
-
- }catch(error){
-  source=null;
-  $("status").textContent=
-   "Не вдалося отримати графіки.";
- }
+  const res=await fetch("/api/power/schedule",{cache:"no-store"});
+  if(!res.ok)throw Error("HTTP "+res.status);
+  source=await res.json();
+  const old=$("day").value;
+  const days=Object.keys(source.days||{}).sort().reverse();
+  $("day").replaceChildren();
+  for(const day of days){const opt=document.createElement("option");opt.value=day;opt.textContent=day===source.today?"Сьогодні · "+day:day;$("day").append(opt)}
+  $("day").disabled=!days.length;
+  if(days.length)$("day").value=days.includes(old)?old:days.includes(source.today)?source.today:days[0];
+  $("updated").textContent="Оновлення джерела: "+(source.source_updated?new Date(source.source_updated).toLocaleString("uk-UA",{timeZone:"Europe/Kyiv"}):"невідомо")+(source.error?" · Помилка останнього оновлення: "+source.error:"");
+  render();
+ }catch(e){source=null;$("day").disabled=true;$("timeline").replaceChildren();$("legend").hidden=true;$("status").textContent="Не вдалося завантажити графік: "+e.message}
 }
-
-$("refresh").onclick=load;
-
-renderButtons();
-load();
-
-setInterval(load,300000);
+$("day").onchange=render;$("refresh").onclick=load;buttons();load();setInterval(load,300000);
 </script>
-
-</body>
-</html>
+</body></html>
