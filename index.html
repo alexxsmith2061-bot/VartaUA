@@ -2,935 +2,304 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101722">
-  <title>VartaUA — Моніторинг України</title>
-
-  <link rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #101722;
-      color: #edf2f7;
-    }
-
-    header {
-      padding: 15px 20px;
-      background: #182231;
-      border-bottom: 1px solid #303c4c;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .logo {
-      font-size: 24px;
-      font-weight: 800;
-      color: #59a8ff;
-    }
-
-    .subtitle {
-      color: #9daec1;
-      font-size: 12px;
-      margin-top: 4px;
-    }
-
-    .live {
-      padding: 8px 12px;
-      border-radius: 20px;
-      background: #293546;
-      font-size: 13px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 310px minmax(0, 1fr);
-      height: calc(100dvh - 77px);
-      min-height: 550px;
-    }
-
-    aside {
-      background: #182231;
-      border-right: 1px solid #303c4c;
-      overflow-y: auto;
-      padding: 16px;
-    }
-
-    h3 {
-      margin: 0 0 12px;
-      font-size: 16px;
-    }
-
-    .panel {
-      padding: 15px;
-      background: #202c3c;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      margin-bottom: 14px;
-    }
-
-    .muted {
-      color: #a6b4c4;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    select, button {
-      width: 100%;
-      padding: 11px;
-      background: #131e2b;
-      border: 1px solid #42536a;
-      color: white;
-      border-radius: 8px;
-      margin: 7px 0;
-      font-size: 14px;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #2a4058;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: #4ea5ff;
-      margin: 15px 0;
-    }
-
-    .radius-value {
-      font-size: 28px;
-      font-weight: bold;
-      color: #64b5ff;
-      text-align: center;
-    }
-
-    .range-labels {
-      display: flex;
-      justify-content: space-between;
-      color: #9fb0c2;
-      font-size: 12px;
-    }
-
-    .region {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 5px;
-      border-bottom: 1px solid #354254;
-      font-size: 13px;
-      gap: 10px;
-    }
-
-    .status {
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-    .alert { color: #ff6262; }
-    .warn { color: #ffc35a; }
-    .calm { color: #60d99a; }
-    .unknown { color: #a5b0bf; }
-
-    main {
-      position: relative;
-      min-width: 0;
-    }
-
-    #map {
-      height: 100%;
-      width: 100%;
-      background: #172332;
-    }
-
-    .map-info {
-      position: absolute;
-      z-index: 500;
-      left: 12px;
-      bottom: 22px;
-      background: rgba(17, 26, 39, .94);
-      border: 1px solid #45556a;
-      border-radius: 10px;
-      padding: 12px;
-      max-width: 290px;
-      font-size: 12px;
-      line-height: 1.5;
-      pointer-events: none;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-      margin-top: 8px;
-    }
-
-    .dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      margin-right: 4px;
-    }
-
-    .leaflet-popup-content-wrapper,
-    .leaflet-popup-tip {
-      background: #202c3c;
-      color: white;
-    }
-
-    @media(max-width: 750px) {
-      .layout {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-      }
-
-      aside {
-        order: 2;
-        overflow: visible;
-      }
-
-      main {
-        order: 1;
-        height: 60dvh;
-        min-height: 360px;
-      }
-
-      .map-info {
-        max-width: 220px;
-        font-size: 11px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VartaUA — Львівщина</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0d1520;color:#eaf1fa;font-family:Arial,sans-serif}
+header{height:65px;background:#172334;border-bottom:1px solid #33445a;display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+.logo{font-size:23px;font-weight:800;color:#6bb7ff}
+.small{font-size:12px;color:#a5b6ca}
+.layout{display:grid;grid-template-columns:320px minmax(0,1fr);height:calc(100dvh - 65px)}
+aside{padding:15px;overflow:auto;background:#172334}
+.panel{background:#202f42;border:1px solid #354a61;border-radius:12px;padding:15px;margin-bottom:12px}
+h3{margin:0 0 13px;font-size:16px}
+button,select{width:100%;padding:11px;border:1px solid #45617b;background:#142234;color:white;border-radius:8px;margin:5px 0;cursor:pointer}
+button:hover{background:#29405b}
+input[type=range]{width:100%;accent-color:#56adff}
+.value{font-size:29px;text-align:center;color:#65baff;font-weight:bold;margin:10px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.muted{font-size:12px;color:#b1c0d0;line-height:1.55}
+.status{padding:10px;border-radius:8px;background:#344357;font-size:13px;line-height:1.5}
+.status.alert{background:#692a34}
+.status.calm{background:#20533e}
+.status.warn{background:#705225}
+main{position:relative;min-height:0}
+#map{width:100%;height:100%;background:#142235}
+.map-note{position:absolute;z-index:500;bottom:25px;left:12px;max-width:270px;background:#142235ee;padding:12px;border-radius:10px;font-size:12px;line-height:1.5;pointer-events:none}
+a{color:#7dbfff}
+.leaflet-container{background:#142235}
+.map-tiles{filter:brightness(.72) saturate(.75)}
+@media(max-width:760px){
+.layout{display:flex;flex-direction:column;height:auto}
+main{height:55dvh;min-height:360px;order:1}
+aside{order:2;overflow:visible}
+header{height:auto;min-height:65px}
+}
+</style>
 </head>
-
 <body>
+
 <header>
-  <div>
-    <div class="logo">🛡 VartaUA</div>
-    <div class="subtitle">
-      Моніторинг повітряних тривог України
-    </div>
-  </div>
-  <div class="live" id="connection">
-    ⏳ Завантаження даних...
-  </div>
+<div>
+<div class="logo">🛡 VartaUA</div>
+<div class="small">Львів та Львівська область</div>
+</div>
+<div class="small" id="connection">Завантаження...</div>
 </header>
 
 <div class="layout">
-  <aside>
-    <div class="panel">
-      <h3>📍 Центр спостереження</h3>
+<aside>
 
-      <select id="citySelect">
-        <option value="49.8397,24.0297">Львів</option>
-        <option value="50.4501,30.5234">Київ</option>
-        <option value="49.9935,36.2304">Харків</option>
-        <option value="46.4825,30.7233">Одеса</option>
-        <option value="48.4647,35.0462">Дніпро</option>
-        <option value="49.2331,28.4682">Вінниця</option>
-        <option value="48.9226,24.7111">Івано-Франківськ</option>
-        <option value="49.5535,25.5948">Тернопіль</option>
-        <option value="50.6199,26.2516">Рівне</option>
-        <option value="50.7472,25.3254">Луцьк</option>
-        <option value="48.2915,25.9403">Чернівці</option>
-        <option value="48.6208,22.2879">Ужгород</option>
-        <option value="49.5883,34.5514">Полтава</option>
-        <option value="50.9077,34.7981">Суми</option>
-        <option value="51.4982,31.2893">Чернігів</option>
-        <option value="49.4444,32.0598">Черкаси</option>
-        <option value="48.5079,32.2623">Кропивницький</option>
-        <option value="46.9750,31.9946">Миколаїв</option>
-        <option value="46.6354,32.6169">Херсон</option>
-        <option value="47.8388,35.1396">Запоріжжя</option>
-        <option value="48.0159,37.8028">Донецьк</option>
-        <option value="48.5740,39.3078">Луганськ</option>
-        <option value="44.9521,34.1024">Сімферополь</option>
-      </select>
+<div class="panel">
+<h3>📍 Центр спостереження</h3>
+<select id="city">
+<option value="49.8397,24.0297">Львів</option>
+<option value="49.3500,23.5000">Дрогобич</option>
+<option value="49.2622,23.8519">Стрий</option>
+<option value="50.3821,24.2275">Шептицький</option>
+<option value="50.0667,24.9333">Золочів</option>
+<option value="49.0360,23.5130">Сколе</option>
+<option value="49.4443,23.0000">Самбір</option>
+<option value="49.7989,23.1480">Мостиська</option>
+<option value="49.9423,23.5738">Яворів</option>
+<option value="50.2320,24.3930">Кам'янка-Бузька</option>
+</select>
+<button id="locate">📡 Моє місцезнаходження</button>
+<div class="muted" id="centerLabel">Центр: Львів</div>
+</div>
 
-      <button id="locationButton">
-        📡 Моє місцезнаходження
-      </button>
+<div class="panel">
+<h3>🎯 Радіус спостереження</h3>
+<div class="value"><span id="radiusValue">150</span> км</div>
+<input id="radius" type="range" min="5" max="150" step="5" value="150">
+<div class="row muted"><span>5 км</span><span>150 км</span></div>
+<p class="muted">Синє коло показує вибрану територію, а не зону ураження.</p>
+<button id="fit">Показати весь радіус</button>
+</div>
 
-      <p class="muted" id="centerName">
-        Центр: Львів
-      </p>
-    </div>
+<div class="panel">
+<h3>🚨 Повітряна тривога</h3>
+<div id="alertStatus" class="status">Очікування даних...</div>
+<p class="muted" id="updated">Перевірка сервера...</p>
+<p class="muted">Офіційне джерело: <a href="https://alerts.in.ua/" target="_blank" rel="noopener">Alerts.in.ua</a></p>
+</div>
 
-    <div class="panel">
-      <h3>🎯 Радіус спостереження</h3>
+<div class="panel">
+<h3>🔔 Звук</h3>
+<button id="sound">🔇 Увімкнути звук</button>
+<p class="muted">Звукове повідомлення про нову обласну тривогу працює, поки сторінка відкрита. Радіус не визначає точне місце загрози.</p>
+</div>
 
-      <div class="radius-value">
-        <span id="radiusValue">150</span> км
-      </div>
+<div class="panel">
+<h3>📡 Повідомлення про загрози</h3>
+<p class="muted">Поки немає підключеного джерела повідомлень. Надалі тут з'являтимуться публічні повідомлення про БпЛА, ракети та інші загрози з часом і джерелом.</p>
+<a href="https://t.me/kpszsu" target="_blank" rel="noopener">Повітряні сили ЗСУ ↗</a>
+</div>
 
-      <input
-        id="radiusSlider"
-        type="range"
-        min="5"
-        max="150"
-        step="5"
-        value="150"
-      >
+<div class="panel">
+<h3>⚡ Електроенергія</h3>
+<a href="https://poweron.loe.lviv.ua/shedule-off" target="_blank" rel="noopener">Графіки Львівобленерго ↗</a>
+<p class="muted">Наступний модуль: вибір населеного пункту, вулиці та черги.</p>
+</div>
 
-      <div class="range-labels">
-        <span>5 км</span>
-        <span>150 км</span>
-      </div>
+</aside>
 
-      <p class="muted">
-        Синє коло показує обрану територію.
-        Радіус можна змінювати від 5 до 150 км.
-      </p>
-    </div>
-
-    <div class="panel">
-      <h3>🔔 Сповіщення</h3>
-
-      <button id="soundButton">
-        🔇 Увімкнути звук
-      </button>
-
-      <p class="muted" id="soundDescription">
-        Звукові сповіщення вимкнені.
-      </p>
-
-      <p class="muted">
-        Зараз звук реагує на нову обласну тривогу,
-        якщо область перетинає обране коло.
-        Це не означає, що ціль перебуває в радіусі.
-      </p>
-    </div>
-
-    <div class="panel">
-      <h3>📊 Стан системи</h3>
-      <div id="lastUpdate" class="muted">
-        Очікування відповіді сервера...
-      </div>
-    </div>
-
-    <div class="panel">
-      <h3>⚡ Корисні сервіси</h3>
-      <a href="https://poweron.loe.lviv.ua/shedule-off"
-         target="_blank" rel="noopener noreferrer"
-         style="color:#76baff">
-        Графіки відключень Львівобленерго ↗
-      </a>
-      <p class="muted">
-        Дорожні події, транспорт, новини та спільноти
-        додамо окремими модулями.
-      </p>
-    </div>
-
-    <h3>🗺 Області України</h3>
-    <div id="regions">
-      <p class="muted">Завантаження...</p>
-    </div>
-
-    <p class="muted">
-      Джерело тривог: Alerts.in.ua.
-      Інформація може надходити із затримкою.
-      Для рішень щодо безпеки орієнтуйтеся
-      на офіційні повідомлення та сигнали.
-    </p>
-  </aside>
-
-  <main>
-    <div id="map"></div>
-
-    <div class="map-info">
-      <strong>VartaUA • Карта тривог</strong>
-      <div class="legend">
-        <span><i class="dot" style="background:#e74c4c"></i>Тривога</span>
-        <span><i class="dot" style="background:#f1b94c"></i>Попередження</span>
-        <span><i class="dot" style="background:#36b37e"></i>Без тривоги</span>
-        <span><i class="dot" style="background:#778596"></i>Немає даних</span>
-      </div>
-      <div style="margin-top:7px;color:#b7c3d1">
-        Коло — вибраний радіус, не зона ураження.
-        Точні позиції цілей не відображаються.
-      </div>
-    </div>
-  </main>
+<main>
+<div id="map"></div>
+<div class="map-note">
+<strong>VartaUA • Львівщина</strong>
+<div>🔵 Синє коло — радіус спостереження.</div>
+<div>⚠️ Точні позиції повітряних цілей не відображаються.</div>
+</div>
+</main>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
 "use strict";
 
-const LVIV = [49.8397, 24.0297];
+const LVIV=[49.8397,24.0297];
+let center=[...LVIV];
+let radius=150;
+let soundOn=false;
+let audioCtx=null;
+let previousAlert=null;
 
-const map = L.map("map", {
-  zoomControl: true,
-  preferCanvas: true
-}).setView(LVIV, 7);
+const map=L.map("map",{zoomControl:true}).setView(center,8);
 
-L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-    attribution: "&copy; OpenStreetMap contributors",
-    maxZoom: 18
-  }
+const tiles=L.tileLayer(
+ "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+ {
+  maxZoom:19,
+  className:"map-tiles",
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+ }
 ).addTo(map);
 
-let center = [...LVIV];
-let radiusKm = 150;
-let soundEnabled = false;
-let audioContext = null;
-let statusData = {};
-let previousAlerts = new Set();
-let hasBaseline = false;
-let geoLayer = null;
-let currentFresh = false;
+tiles.on("tileerror",()=>{
+ document.getElementById("connection").textContent=
+ "⚠️ Проблема із завантаженням карти";
+});
 
-const radiusCircle = L.circle(center, {
-  radius: radiusKm * 1000,
-  color: "#4ea5ff",
-  weight: 2,
-  fillColor: "#4ea5ff",
-  fillOpacity: 0.09
+const circle=L.circle(center,{
+ radius:radius*1000,
+ color:"#55aeff",
+ weight:2,
+ fillColor:"#55aeff",
+ fillOpacity:.10
 }).addTo(map);
 
-const centerMarker = L.circleMarker(center, {
-  radius: 6,
-  color: "#ffffff",
-  weight: 2,
-  fillColor: "#4ea5ff",
-  fillOpacity: 1
-}).addTo(map).bindPopup("Центр спостереження");
+const marker=L.circleMarker(center,{
+ radius:6,
+ color:"#fff",
+ weight:2,
+ fillColor:"#55aeff",
+ fillOpacity:1
+}).addTo(map);
 
-const regionNames = [
-  "Вінницька", "Волинська", "Дніпропетровська",
-  "Донецька", "Житомирська", "Закарпатська",
-  "Запорізька", "Івано-Франківська", "Київська",
-  "Кіровоградська", "Луганська", "Львівська",
-  "Миколаївська", "Одеська", "Полтавська",
-  "Рівненська", "Сумська", "Тернопільська",
-  "Харківська", "Херсонська", "Хмельницька",
-  "Черкаська", "Чернівецька", "Чернігівська"
-];
+marker.bindPopup("Центр спостереження");
 
-const colors = {
-  alert: "#c83d46",
-  warn: "#d99b35",
-  calm: "#237b5c",
-  unknown: "#526172"
-};
+function fitRadius(){
+ map.fitBounds(circle.getBounds(),{
+  padding:[25,25],
+  maxZoom:13
+ });
+}
 
-const labels = {
-  alert: "🔴 Тривога",
-  warn: "🟡 Попередження",
-  calm: "🟢 Без тривоги",
-  unknown: "⚪ Немає даних"
-};
+function setCenter(coords,name){
+ center=coords;
+ circle.setLatLng(center);
+ marker.setLatLng(center);
+ document.getElementById("centerLabel").textContent="Центр: "+name;
+ fitRadius();
+}
 
-function normalizeStatus(value) {
-  if (typeof value === "object" && value !== null) {
-    value = value.status ?? value.state ?? "unknown";
+document.getElementById("city").addEventListener("change",e=>{
+ const coords=e.target.value.split(",").map(Number);
+ setCenter(coords,e.target.selectedOptions[0].textContent);
+});
+
+document.getElementById("radius").addEventListener("input",e=>{
+ radius=Number(e.target.value);
+ document.getElementById("radiusValue").textContent=radius;
+ circle.setRadius(radius*1000);
+ fitRadius();
+});
+
+document.getElementById("fit").addEventListener("click",fitRadius);
+
+document.getElementById("locate").addEventListener("click",()=>{
+ if(!navigator.geolocation){
+  alert("Браузер не підтримує геолокацію");
+  return;
+ }
+ navigator.geolocation.getCurrentPosition(
+  p=>{
+   setCenter([p.coords.latitude,p.coords.longitude],"моє місце");
+   document.getElementById("city").selectedIndex=-1;
+  },
+  ()=>alert("Не вдалося отримати місцезнаходження"),
+  {timeout:12000}
+ );
+});
+
+document.getElementById("sound").addEventListener("click",async()=>{
+ if(!soundOn){
+  try{
+   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+   await audioCtx.resume();
+   soundOn=true;
+  }catch(e){
+   alert("Браузер не дозволив увімкнути звук");
+  }
+ }else{
+  soundOn=false;
+ }
+ document.getElementById("sound").textContent=
+ soundOn?"🔊 Вимкнути звук":"🔇 Увімкнути звук";
+});
+
+function beep(){
+ if(!soundOn||!audioCtx)return;
+ const start=audioCtx.currentTime;
+ for(let i=0;i<3;i++){
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.frequency.value=i%2?550:750;
+  gain.gain.setValueAtTime(.0001,start+i*.3);
+  gain.gain.exponentialRampToValueAtTime(.15,start+i*.3+.03);
+  gain.gain.exponentialRampToValueAtTime(.0001,start+i*.3+.23);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(start+i*.3);
+  osc.stop(start+i*.3+.25);
+ }
+}
+
+function setAlert(text,kind){
+ const el=document.getElementById("alertStatus");
+ el.className="status "+kind;
+ el.textContent=text;
+}
+
+async function updateStatus(){
+ try{
+  const response=await fetch("/api/status",{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const data=await response.json();
+  const meta=data._meta||{};
+  const region=data["Львівська область"]||data["Львівська"]||{};
+  const state=typeof region==="string"?region:
+   (region.state||region.status||"unk");
+
+  if(meta.fresh!==true){
+   setAlert("⚠️ Немає актуальних даних про тривоги","warn");
+   document.getElementById("connection").textContent="API недоступний";
+   document.getElementById("updated").textContent=
+    meta.alerts_api_configured===false
+    ?"Токен Alerts.in.ua не налаштовано."
+    :"Очікуємо дані від Alerts.in.ua.";
+   previousAlert=null;
+   return;
   }
 
-  if (value === "unk" || value === "unknown") {
-    return "unknown";
+  const isAlert=state==="alert";
+
+  if(isAlert){
+   setAlert("🔴 Повітряна тривога у Львівській області","alert");
+  }else if(state==="calm"){
+   setAlert("🟢 Обласної тривоги не зафіксовано","calm");
+  }else if(state==="warn"){
+   setAlert("🟡 Є повідомлення про можливу загрозу","warn");
+  }else{
+   setAlert("⚠️ Статус області невідомий","warn");
   }
 
-  return ["alert", "warn", "calm"].includes(value)
-    ? value
-    : "unknown";
+  if(previousAlert===false&&isAlert)beep();
+  previousAlert=(state==="alert"||state==="calm")?isAlert:null;
+
+  document.getElementById("connection").textContent="● Дані оновлюються";
+  document.getElementById("updated").textContent=
+   "Оновлено: "+(meta.updated_at?
+   new Date(meta.updated_at).toLocaleString("uk-UA"):
+   "час невідомий");
+
+ }catch(error){
+  setAlert("⚠️ Немає зв'язку із сервером тривог","warn");
+  document.getElementById("connection").textContent="API недоступний";
+  document.getElementById("updated").textContent=error.message;
+  previousAlert=null;
+ }
 }
 
-function getRegionStatus(name) {
-  if (!currentFresh) return "unknown";
-  return normalizeStatus(statusData[name]);
-}
-
-function setCenter(latlng, label) {
-  center = [latlng[0], latlng[1]];
-
-  radiusCircle.setLatLng(center);
-  centerMarker.setLatLng(center);
-
-  document.getElementById("centerName").textContent =
-    "Центр: " + label;
-
-  map.flyTo(center, radiusKm <= 20 ? 10 :
-    radiusKm <= 50 ? 9 : 7);
-
-  // Перезапускаємо відстеження після зміни території.
-  hasBaseline = false;
-  previousAlerts.clear();
-}
-
-document.getElementById("citySelect")
-  .addEventListener("change", event => {
-    const point = event.target.value.split(",").map(Number);
-    const label = event.target.selectedOptions[0].text;
-    setCenter(point, label);
-  });
-
-document.getElementById("radiusSlider")
-  .addEventListener("input", event => {
-    radiusKm = Number(event.target.value);
-
-    document.getElementById("radiusValue").textContent =
-      radiusKm;
-
-    radiusCircle.setRadius(radiusKm * 1000);
-
-    hasBaseline = false;
-    previousAlerts.clear();
-  });
-
-document.getElementById("locationButton")
-  .addEventListener("click", () => {
-    if (!navigator.geolocation) {
-      alert("Геолокація не підтримується браузером.");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        setCenter(
-          [position.coords.latitude, position.coords.longitude],
-          "моє місцезнаходження"
-        );
-        document.getElementById("citySelect").selectedIndex = -1;
-      },
-      () => {
-        alert("Не вдалося отримати місцезнаходження.");
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 12000
-      }
-    );
-  });
-
-async function playAlertSound() {
-  if (!soundEnabled) return;
-
-  try {
-    const ctx = audioContext;
-    if (!ctx) return;
-
-    if (ctx.state === "suspended") {
-      await ctx.resume();
-    }
-
-    const start = ctx.currentTime;
-
-    for (let i = 0; i < 3; i++) {
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      oscillator.type = "sine";
-      oscillator.frequency.value = i % 2 === 0 ? 740 : 540;
-
-      gain.gain.setValueAtTime(0.0001, start + i * 0.3);
-      gain.gain.exponentialRampToValueAtTime(
-        0.18, start + i * 0.3 + 0.025
-      );
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001, start + i * 0.3 + 0.24
-      );
-
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-
-      oscillator.start(start + i * 0.3);
-      oscillator.stop(start + i * 0.3 + 0.25);
-    }
-  } catch (error) {
-    console.warn("Помилка звуку:", error);
-  }
-}
-
-document.getElementById("soundButton")
-  .addEventListener("click", async () => {
-    soundEnabled = !soundEnabled;
-
-    if (soundEnabled) {
-      try {
-        audioContext = audioContext ||
-          new (window.AudioContext || window.webkitAudioContext)();
-        await audioContext.resume();
-      } catch (error) {
-        soundEnabled = false;
-      }
-    }
-
-    document.getElementById("soundButton").textContent =
-      soundEnabled
-        ? "🔊 Вимкнути звук"
-        : "🔇 Увімкнути звук";
-
-    document.getElementById("soundDescription").textContent =
-      soundEnabled
-        ? "Звук увімкнено. Сповіщення працюють, поки сторінка відкрита."
-        : "Звукові сповіщення вимкнені.";
-  });
-
-function normalizeRegionName(value) {
-  if (!value) return "";
-
-  return String(value)
-    .toLowerCase()
-    .replace(/['’`]/g, "")
-    .replace(/область|обл\.?/g, "")
-    .replace(/[^а-яіїєґa-z]/g, "");
-}
-
-function featureRegion(feature) {
-  const props = feature.properties || {};
-
-  const candidates = [
-    props.name,
-    props.NAME_1,
-    props.NAME,
-    props.name_uk,
-    props.name_ua,
-    props.NAME_UK,
-    props.region,
-    props.oblast
-  ].filter(Boolean);
-
-  for (const candidate of candidates) {
-    const normalized = normalizeRegionName(candidate);
-
-    const match = regionNames.find(name =>
-      normalizeRegionName(name) === normalized
-    );
-
-    if (match) return match;
-  }
-
-  return null;
-}
-
-function styleFeature(feature) {
-  const name = featureRegion(feature);
-  const state = name ? getRegionStatus(name) : "unknown";
-
-  return {
-    color: "#9eabbc",
-    weight: 0.8,
-    fillColor: colors[state],
-    fillOpacity: 0.63
-  };
-}
-
-function refreshMap() {
-  if (geoLayer) {
-    geoLayer.setStyle(styleFeature);
-  }
-}
-
-async function loadRegionsGeoJSON() {
-  const sources = [
-    "https://cdn.jsdelivr.net/gh/darmat1/ukraine-geo-data@main/geodata/Ukraine.geojson",
-    "https://raw.githubusercontent.com/Astaryon/ukraine_geojson_full/main/ukraine.geojson"
-  ];
-
-  for (const url of sources) {
-    try {
-      const response = await fetch(url);
-
-      if (!response.ok) continue;
-
-      const data = await response.json();
-
-      if (!data || !data.features || !data.features.length) {
-        continue;
-      }
-
-      // Перевіряємо, чи справді файл містить області.
-      const matches = data.features.filter(feature =>
-        featureRegion(feature)
-      ).length;
-
-      if (matches < 10) {
-        console.warn("GeoJSON не містить достатньо областей:", url);
-        continue;
-      }
-
-      geoLayer = L.geoJSON(data, {
-        style: styleFeature,
-        onEachFeature(feature, layer) {
-          const name = featureRegion(feature);
-
-          if (!name) return;
-
-          layer.bindPopup(name + " область");
-
-          layer.on("click", () => {
-            const state = getRegionStatus(name);
-            layer.setPopupContent(
-              "<strong>" + name + " область</strong><br>" +
-              labels[state]
-            );
-          });
-        }
-      }).addTo(map);
-
-      return;
-    } catch (error) {
-      console.warn("Не вдалося завантажити GeoJSON:", error);
-    }
-  }
-
-  document.getElementById("connection").textContent =
-    "⚠️ Межі областей недоступні";
-}
-
-// Для перевірки перетину радіуса з областю
-// використовуємо геометрію полігонів, а не їх центри.
-
-function distanceKm(a, b) {
-  return map.distance(a, b) / 1000;
-}
-
-function pointInRing(point, ring) {
-  const x = point[0];
-  const y = point[1];
-  let inside = false;
-
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], yi = ring[i][1];
-    const xj = ring[j][0], yj = ring[j][1];
-
-    if ((yi > y) !== (yj > y) &&
-        x < (xj - xi) * (y - yi) / (yj - yi) + xi) {
-      inside = !inside;
-    }
-  }
-
-  return inside;
-}
-
-function pointInPolygon(point, polygon) {
-  if (!pointInRing(point, polygon[0])) return false;
-
-  for (let i = 1; i < polygon.length; i++) {
-    if (pointInRing(point, polygon[i])) return false;
-  }
-
-  return true;
-}
-
-function segmentDistanceKm(point, a, b) {
-  const latitude = point[1] * Math.PI / 180;
-  const scaleX = 111.32 * Math.cos(latitude);
-  const scaleY = 111.32;
-
-  const ax = (a[0] - point[0]) * scaleX;
-  const ay = (a[1] - point[1]) * scaleY;
-  const bx = (b[0] - point[0]) * scaleX;
-  const by = (b[1] - point[1]) * scaleY;
-
-  const dx = bx - ax;
-  const dy = by - ay;
-
-  const lengthSquared = dx * dx + dy * dy;
-
-  const t = lengthSquared === 0 ? 0 :
-    Math.max(0, Math.min(1,
-      -(ax * dx + ay * dy) / lengthSquared
-    ));
-
-  return Math.hypot(ax + t * dx, ay + t * dy);
-}
-
-function polygonIntersectsCircle(polygon) {
-  const point = [center[1], center[0]];
-
-  if (pointInPolygon(point, polygon)) return true;
-
-  for (const ring of polygon) {
-    for (let i = 0; i < ring.length; i++) {
-      const a = ring[i];
-      const b = ring[(i + 1) % ring.length];
-
-      if (segmentDistanceKm(point, a, b) <= radiusKm) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-function geometryIntersectsCircle(geometry) {
-  if (!geometry) return false;
-
-  if (geometry.type === "Polygon") {
-    return polygonIntersectsCircle(geometry.coordinates);
-  }
-
-  if (geometry.type === "MultiPolygon") {
-    return geometry.coordinates.some(polygonIntersectsCircle);
-  }
-
-  return false;
-}
-
-function regionsInRadius() {
-  const selected = new Set();
-
-  if (!geoLayer) return selected;
-
-  geoLayer.eachLayer(layer => {
-    const feature = layer.feature;
-    const name = featureRegion(feature);
-
-    if (name && geometryIntersectsCircle(feature.geometry)) {
-      selected.add(name);
-    }
-  });
-
-  return selected;
-}
-
-function renderRegions() {
-  const container = document.getElementById("regions");
-  container.replaceChildren();
-
-  for (const name of regionNames) {
-    const state = getRegionStatus(name);
-
-    const row = document.createElement("div");
-    row.className = "region";
-
-    const title = document.createElement("span");
-    title.textContent = name;
-
-    const badge = document.createElement("span");
-    badge.className = "status " + state;
-    badge.textContent = labels[state];
-
-    row.append(title, badge);
-    container.appendChild(row);
-  }
-}
-
-function checkNewAlerts() {
-  if (!currentFresh || !geoLayer) return;
-
-  const nearby = regionsInRadius();
-
-  const active = new Set(
-    [...nearby].filter(name =>
-      getRegionStatus(name) === "alert"
-    )
-  );
-
-  if (hasBaseline) {
-    const newAlerts = [...active].filter(
-      name => !previousAlerts.has(name)
-    );
-
-    if (newAlerts.length > 0) {
-      playAlertSound();
-
-      document.getElementById("connection").textContent =
-        "🚨 Нова тривога: " + newAlerts.join(", ");
-    }
-  }
-
-  previousAlerts = active;
-  hasBaseline = true;
-}
-
-function formatTime(value) {
-  if (!value) return "невідомо";
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime())
-    ? String(value)
-    : date.toLocaleString("uk-UA");
-}
-
-async function updateStatus() {
-  try {
-    const response = await fetch("/api/status", {
-      cache: "no-store"
-    });
-
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
-    }
-
-    const data = await response.json();
-
-    const meta = data._meta || {};
-    statusData = data;
-
-    currentFresh = meta.fresh === true;
-
-    // Сумісність із сервером, який повертає
-    // 'unk' для застарілих даних.
-    if (!currentFresh) {
-      hasBaseline = false;
-      previousAlerts.clear();
-    }
-
-    document.getElementById("connection").textContent =
-      currentFresh
-        ? "🟢 Дані актуальні"
-        : "⚠️ Дані неактуальні або недоступні";
-
-    document.getElementById("lastUpdate").textContent =
-      "Оновлено: " + formatTime(meta.updated_at) +
-      "\nДжерело: Alerts.in.ua";
-
-    renderRegions();
-    refreshMap();
-    checkNewAlerts();
-
-  } catch (error) {
-    currentFresh = false;
-    hasBaseline = false;
-    previousAlerts.clear();
-
-    document.getElementById("connection").textContent =
-      "🔴 Немає зв'язку із сервером";
-
-    document.getElementById("lastUpdate").textContent =
-      "Помилка отримання даних: " + error.message;
-
-    renderRegions();
-    refreshMap();
-  }
-}
-
-async function initialize() {
-  renderRegions();
-
-  await Promise.all([
-    loadRegionsGeoJSON(),
-    updateStatus()
-  ]);
-
-  refreshMap();
-
-  // Перша перевірка лише встановлює початковий стан.
-  checkNewAlerts();
-
-  setInterval(updateStatus, 20000);
-}
-
-initialize();
+fitRadius();
+updateStatus();
+setInterval(updateStatus,20000);
+
+window.addEventListener("load",()=>map.invalidateSize());
 </script>
 </body>
 </html>
