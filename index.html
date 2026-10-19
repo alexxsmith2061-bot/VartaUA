@@ -296,7 +296,23 @@ async function loadOblasts(){
      return p.ISO3166_1_Alpha_3==="UKR"||p.ISO_A3==="UKR"||p.ADMIN==="Ukraine"||p.name==="Ukraine";
     });
     if(ua){
-     nationalOutline=L.geoJSON(ua,{style:{color:"#69d9ff",weight:3,opacity:1,fill:false,className:"national-outline"},interactive:false}).addTo(map);
+     // Маска по справжньому державному кордону: поза Україною немає зайвих картографічних деталей.
+     const geometry=ua.geometry||{};
+     const polygons=geometry.type==="MultiPolygon"?geometry.coordinates:
+       geometry.type==="Polygon"?[geometry.coordinates]:[];
+     const outer=[[85,-179],[85,179],[-85,179],[-85,-179]];
+     const holes=polygons.map(poly=>poly[0].map(([lng,lat])=>[lat,lng]));
+     if(holes.length){
+      L.polygon([outer,...holes],{
+       pane:"outsideUkrainePane",stroke:false,fillColor:"#06111e",
+       fillOpacity:0.97,interactive:false,fillRule:"evenodd"
+      }).addTo(map);
+     }
+     nationalOutline=L.geoJSON(ua,{
+      pane:"nationalBorderPane",
+      style:{color:"#69d9ff",weight:3,opacity:1,fill:false,className:"national-outline"},
+      interactive:false
+     }).addTo(map);
     }
    }
   }catch(err){console.warn("Country border temporarily unavailable",err);}
@@ -333,6 +349,14 @@ async function loadOblasts(){
 const UKRAINE_BOUNDS=L.latLngBounds([[44.1,22.0],[52.5,40.3]]);
 const map=L.map("map",{zoomControl:true,minZoom:5,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
 map.whenReady(()=>{map.setMinZoom(Math.max(5,map.getBoundsZoom(UKRAINE_BOUNDS)));map.panInsideBounds(UKRAINE_BOUNDS,{animate:false});});
+
+// Затемнення сусідніх держав над областями та під українським контуром.
+map.createPane("outsideUkrainePane");
+map.getPane("outsideUkrainePane").style.zIndex=425;
+map.getPane("outsideUkrainePane").style.pointerEvents="none";
+map.createPane("nationalBorderPane");
+map.getPane("nationalBorderPane").style.zIndex=435;
+map.getPane("nationalBorderPane").style.pointerEvents="none";
 
 map.createPane("labelPane");
 map.getPane("labelPane").style.zIndex=350;
