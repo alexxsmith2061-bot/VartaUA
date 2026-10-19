@@ -161,7 +161,8 @@ async def poll_alerts():
                 last_successful_check = datetime.now(timezone.utc).isoformat()
                 if response.status_code == 304:
                     last_error = None
-                    data_fresh = True
+                    data_fresh = last_updated is not None
+                    rate_limit_failures = 0
                     next_poll_seconds = 120
                     await asyncio.sleep(next_poll_seconds)
                     continue
@@ -201,8 +202,10 @@ async def poll_alerts():
                         next_poll_seconds = max(900 * (2 ** min(rate_limit_failures - 1, 3)), int(retry) + 60)
                     except (ValueError, TypeError):
                         next_poll_seconds = 900 * (2 ** min(rate_limit_failures - 1, 3))
+                elif error.response.status_code in (401, 403):
+                    next_poll_seconds = 3600
                 else:
-                    next_poll_seconds = 360
+                    next_poll_seconds = 300
                 logger.warning("Alerts.in.ua HTTP %s; next attempt in %s seconds", error.response.status_code, next_poll_seconds)
             except Exception as error:
                 last_error = str(error)
