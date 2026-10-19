@@ -662,7 +662,7 @@ async def power_svitlo_source_check():
             if "html" not in content_type.lower():
                 raise ValueError("Сторінка не HTML")
             page = response.text
-        scripts = re.findall(r'<script\\b[^>]*\\bsrc\\s*=\\s*["\\']([^"\\']+)["\\']', page, re.I)
+        scripts = re.findall(r"<script[^>]+src=[\u0027\u0022]([^\u0027\u0022]+)", page, re.I)
         scripts = [src[:200] for src in scripts if src.startswith("/") or src.startswith("https://svitlo.day/")][:20]
         return {"available": True, "source": url, "official": False,
                 "html_bytes": len(response.content), "script_count": len(scripts),
