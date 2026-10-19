@@ -21,7 +21,7 @@ REGIONS = {
 }
 FEED = deque(maxlen=250)
 STATE = {"configured": False, "connected": False, "last_check": None, "error": None}
-MAX_AGE = timedelta(hours=6)
+MAX_AGE = timedelta(minutes=90)
 DANGER_WORDS = ("бпла", "шахед", "дрон", "ракета", "ракет", "крилат", "баліст", "авіац", "каб", "загроз", "тривог", "ппо", "вибух")
 def extract_regions(message):
     text = message.casefold()
@@ -49,7 +49,7 @@ async def monitor_telegram():
             await client.disconnect()
             return
         STATE["configured"] = True
-        STATE["connected"] = True
+        STATE["connected"] = False
         sources = {}
         for channel in CHANNELS:
             try:
