@@ -86,11 +86,11 @@ def parse_official(payload):
                 continue
             paragraphs = [
                 html.unescape(re.sub(r"<[^>]*>", "", x)).strip()
-                for x in re.findall(r"<p\\b[^>]*>(.*?)</p>", raw, re.I | re.S)
+                for x in re.findall(r"<p\b[^>]*>(.*?)</p>", raw, re.I | re.S)
             ]
             if len(paragraphs) < 3:
                 continue
-            date_match = re.search(r"\\b(\\d{2}\\.\\d{2}\\.\\d{4})\\b", paragraphs[0])
+            date_match = re.search(r"\b(\d{2}\.\d{2}\.\d{4})\b", paragraphs[0])
             if not date_match:
                 continue
             try:
@@ -98,7 +98,7 @@ def parse_official(payload):
                 day = day_date.isoformat()
             except ValueError:
                 continue
-            stamp_match = re.search(r"(\\d{2}:\\d{2}).*?(\\d{2}\\.\\d{2}\\.\\d{4})", paragraphs[1])
+            stamp_match = re.search(r"(\d{2}:\d{2}).*?(\d{2}\.\d{2}\.\d{4})", paragraphs[1])
             if not stamp_match:
                 continue
             try:
@@ -107,14 +107,14 @@ def parse_official(payload):
                 continue
             groups = {}
             for p in paragraphs[2:]:
-                m = re.search(r"Група\\s+(\\d+\\.\\d+)\\.\\s*(.*)", p, re.I)
+                m = re.search(r"Група\s+(\d+\.\d+)\.\s*(.*)", p, re.I)
                 if not m or m.group(1) not in QUEUES:
                     continue
                 queue, message = m.group(1), m.group(2)
                 if "Електроенергія є" in message:
                     groups[queue] = ["yes"] * 24
                 elif "Електроенергії немає" in message:
-                    ranges = re.findall(r"з\\s+(\\d{2}:\\d{2})\\s+до\\s+(\\d{2}:\\d{2})", message)
+                    ranges = re.findall(r"з\s+(\d{2}:\d{2})\s+до\s+(\d{2}:\d{2})", message)
                     if not ranges:
                         continue
                     # Half-hour intervals preserve exact official time boundaries.
