@@ -112,8 +112,8 @@ a{color:#80f0ff;font-weight:600}
 <div class="panel">
 <h3>🗺️ Вигляд карти</h3>
 <div class="row">
-<button id="streetBtn" class="active">🗺️ Карта</button>
-<button id="satBtn">🛰️ Супутник</button>
+<button id="streetBtn">🗺️ Карта</button>
+<button id="satBtn" class="active">🛰️ Супутник</button>
 </div>
 <label class="muted">
 <input type="checkbox" id="showLabels" checked>
@@ -177,13 +177,14 @@ a{color:#80f0ff;font-weight:600}
 <main>
 <div id="map"></div>
 <div class="maptools">
-<button id="mapStreetBtn" class="active">Карта</button>
-<button id="mapSatBtn">Супутник</button>
+<button id="mapStreetBtn">Карта</button>
+<button id="mapSatBtn" class="active">Супутник</button>
+<button id="wholeUkraine">🇺🇦 Україна</button>
 </div>
 <div class="note">
 <strong>VartaUA • Львівщина</strong>
 <div>🔵 Радіус від 5 до 150 км</div>
-<div>🟥 Тривога · 🟩 Без тривоги · ⬜ Немає даних</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
+<div>🟨 Тривога · Прозоро — без тривоги · ⬜ Немає даних</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
 </div>
 </main>
 </div>
@@ -198,7 +199,7 @@ let radiusKm=150;
 let soundEnabled=false;
 let audioContext=null;
 let previousAlert=null;
-let mapMode="street";
+let mapMode="satellite";
 let oblastLayer=null;
 let oblastGeo=null;
 let currentStatus=null;
@@ -225,9 +226,9 @@ function regionState(name){
 }
 function oblastStyle(feature){
  const state=regionState(featureRegion(feature));
- return {color:state==="alert"?"#ff6076":"#8ad4f7",weight:1.5,opacity:.85,
- fillColor:state==="alert"?"#e63b58":state==="calm"?"#14b98a":"#8b9db0",
- fillOpacity:state==="alert"?.48:state==="calm"?.13:.19};
+ return {color:state==="alert"?"#ffda70":"#b6c6d4",weight:1.1,opacity:.7,
+ fillColor:state==="alert"?"#ffb02e":state==="calm"?"#13bb99":"#8b9db0",
+ fillOpacity:state==="alert"?.46:state==="calm"?.035:.12};
 }
 function redrawOblasts(){
  if(!oblastLayer)return;
@@ -259,7 +260,8 @@ async function loadOblasts(){
     });
    }
   }).addTo(map);
-  oblastLayer.bringToBack();
+  oblastLayer.bringToFront();
+  circle.bringToFront();marker.bringToFront();
   redrawOblasts();
  }catch(error){
   document.getElementById("oblastSummary").textContent="Межі областей тимчасово недоступні";
@@ -269,8 +271,8 @@ async function loadOblasts(){
 
 // Geographic guardrails: Ukraine and its immediate border buffer only.
 const UKRAINE_BOUNDS=L.latLngBounds([[43.1,21.0],[53.1,41.5]]);
-const map=L.map("map",{zoomControl:true,minZoom:6,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
-map.whenReady(()=>{map.setMinZoom(Math.max(6,map.getBoundsZoom(UKRAINE_BOUNDS)));});
+const map=L.map("map",{zoomControl:true,minZoom:5,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
+map.whenReady(()=>{map.setMinZoom(Math.max(5,map.getBoundsZoom(UKRAINE_BOUNDS)));});
 
 map.createPane("labelPane");
 map.getPane("labelPane").style.zIndex=350;
@@ -314,7 +316,8 @@ const roadLayer=L.tileLayer(
  }
 );
 
-streetLayer.addTo(map);
+satelliteLayer.addTo(map);
+labelLayer.addTo(map);
 
 const circle=L.circle(center,{
  radius:radiusKm*1000,
@@ -412,6 +415,7 @@ document.getElementById("radius").oninput=e=>{
 };
 
 document.getElementById("fit").onclick=fitRadius;
+document.getElementById("wholeUkraine").onclick=()=>map.fitBounds([[44.3,22.2],[52.3,40.3]],{padding:[15,15]});
 
 document.getElementById("locate").onclick=()=>{
  if(!navigator.geolocation){
@@ -527,7 +531,7 @@ async function updateStatus(){
  }
 }
 
-fitRadius();
+map.fitBounds([[44.3,22.2],[52.3,40.3]],{padding:[15,15]});
 loadOblasts();
 updateStatus();
 setInterval(updateStatus,20000);
