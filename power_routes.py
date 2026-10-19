@@ -182,28 +182,14 @@ async def load_data():
                     official = await fetch_official(client)
                 except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
                     errors.append("Офіційне джерело: " + str(exc))
-                today = datetime.now(KYIV).date().isoformat()
-                if official and today in official["days"]:
-                    parsed = official
-                else:
-                    try:
-                        response = await client.get(DATA_URL, headers={"User-Agent": "VartaUA/1.0", "Accept": "application/json"})
-                        response.raise_for_status()
-                        if len(response.content) > 2_000_000:
-                            raise ValueError("Завеликий файл резервного джерела")
-                        parsed = parse_source(response.json())
-                        parsed["source"] = SOURCE
-                        parsed["source_type"] = "aggregator"
-                    except (httpx.HTTPError, ValueError, TypeError) as exc:
-                        errors.append("Резервне джерело: " + str(exc))
-                        if official:
-                            parsed = official
-                        else:
-                            raise ValueError("; ".join(errors))
+                if official is None:
+                    raise ValueError("; ".join(errors) or "Офіційні графіки недоступні")
+                parsed = official
                 _cache["data"] = parsed
                 _cache["fetched_at"] = datetime.now(timezone.utc).isoformat()
                 _cache["error"] = "; ".join(errors) if errors else None
         except (httpx.HTTPError, ValueError) as exc:
+            _cache["data"] = None
             _cache["error"] = str(exc)
 
 
@@ -318,7 +304,7 @@ async def schedule():
     today = now.astimezone(KYIV).date().isoformat()
     if not data:
         return {"available": False, "today": today, "days": {}, "queues": QUEUES,
-                "error": _cache["error"] or "Джерело недоступне", "source": SOURCE,
+                "error": _cache["error"] or "Джерело недоступне", "source": "https://poweron.loe.lviv.ua/", "source_type": "official",
                 "source_updated": None, "stale": True}
     updated = datetime.fromisoformat(data["source_updated"])
     age = (now - updated).total_seconds()
