@@ -20,7 +20,7 @@
 <p class="muted" id="updated"></p><div class="actions"><button id="refresh">↻ Оновити дані</button></div>
 </section>
 <section class="panel"><h2>🏠 Як визначити свою чергу?</h2><p class="muted">Визначення черги за адресою поки недоступне: офіційний адресний API повертає помилки. Не вгадуй чергу за сусідніми будинками. Коли знаєш свою чергу, вибери її вище.</p></section>
-<p class="muted">Джерело: <a href="https://github.com/yaroslav2901/OE_OUTAGE_DATA" target="_blank" rel="noopener noreferrer">OE_OUTAGE_DATA · Львівобленерго</a>. Дані незалежного агрегатора, не офіційний канал VartaUA.</p>
+<p class="muted">Джерело поточного графіка: <a id="source-link" href="https://poweron.loe.lviv.ua/" target="_blank" rel="noopener noreferrer">перевіряємо…</a>. VartaUA не є офіційним сайтом обленерго.</p>
 </main>
 <script>
 "use strict";
@@ -66,6 +66,7 @@ async function load(){
   const res=await fetch("/api/power/schedule",{cache:"no-store"});
   if(!res.ok)throw Error("HTTP "+res.status);
   source=await res.json();
+  const link=$("source-link");link.href=source.source||"https://poweron.loe.lviv.ua/";link.textContent=source.source_type==="official"?"Офіційне Львівобленерго":source.source_type==="aggregator"?"Резервне джерело OE_OUTAGE_DATA":"Джерело недоступне";
   const old=$("day").value;
   const days=Object.keys(source.days||{}).sort().reverse();
   $("day").replaceChildren();
