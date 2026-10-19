@@ -95,6 +95,30 @@ a{color:#80f0ff;font-weight:600}
 .maptools{border-color:#25c9ee}
 .note{border-color:#26b6e5}
 @media(max-width:760px){.ua-flag{font-size:21px;width:38px;height:34px}.header-right{gap:7px}.logo{font-size:22px}}
+
+/* VartaUA NEPTUN-inspired operational map (original styling). */
+:root{--gold:#ffca49;--danger:#ff4e65;--cyan:#58cfff}
+html,body{background:#060f1b}
+header{height:62px;background:linear-gradient(95deg,#081522,#11283d 60%,#071320);border-bottom:1px solid #3678a0;box-shadow:0 3px 26px #00aaff1b}
+.logo{color:#e6f8ff;text-shadow:0 0 15px #35b9ff70}
+.layout{height:calc(100dvh - 62px);grid-template-columns:292px minmax(0,1fr)}
+aside{background:linear-gradient(180deg,#091b2c,#071321);border-right:1px solid #2c5677}
+.panel{background:linear-gradient(135deg,#10283edc,#0b1c2edc);border:1px solid #315c7b;border-radius:13px;box-shadow:inset 0 1px #ffffff09,0 8px 24px #0005}
+h3{color:#dff5ff}
+#map{background:#050e19}
+#map .leaflet-tile-pane{filter:brightness(.64) contrast(1.16) saturate(.78)}
+#map .leaflet-overlay-pane path{transition:fill-opacity .4s,stroke .4s}
+.maptools{top:14px;right:14px;border:1px solid #4c83a5;background:#071829e8}
+.maptools button{font-weight:700}
+.note{background:#071827ed;border:1px solid #39749b;box-shadow:0 8px 32px #000a;max-width:300px}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0b2236;color:#e9f8ff;border:1px solid #4e7795}
+.leaflet-control-zoom a{background:#0c2438!important;color:#a9e4ff!important;border-color:#376383!important}
+#map:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:399;box-shadow:inset 0 0 110px 28px #04101b7a}
+#map .national-outline{filter:drop-shadow(0 0 3px #4bd6ff) drop-shadow(0 0 8px #35baff)}
+#map .oblast-alert-red{filter:drop-shadow(0 0 4px #ff304a88)}
+#map .oblast-alert-yellow{filter:drop-shadow(0 0 4px #ffcb4888)}
+@media(max-width:760px){.layout{height:auto}header{height:auto}aside{border-right:0}.note{max-width:215px;font-size:10px}}
+
 </style>
 </head>
 <body>
@@ -202,6 +226,7 @@ let previousAlert=null;
 let mapMode="satellite";
 let oblastLayer=null;
 let oblastGeo=null;
+let nationalOutline=null;
 let currentStatus=null;
 const GEO_SOURCE="https://cdn.jsdelivr.net/gh/darmat1/ukraine-geo-data@main/geodata/Ukraine.geojson";
 function normalizeOblastName(value){
@@ -225,16 +250,17 @@ function regionState(name){
  return typeof region==="string"?region:(region.state||region.status||"unk");
 }
 function oblastStyle(feature){
- const state=regionState(featureRegion(feature));
- const item=currentStatus&&currentStatus[featureRegion(feature)];
- const partial=item&&item.scope==="partial";
- const level=item&&item.level;
- const red=state==="alert"&&level==="red";
- const yellow=state==="alert"&&level==="yellow";
- return {color:red?"#ff8c91":yellow?"#ffda70":"#b6c6d4",weight:1.2,opacity:.85,
- dashArray:partial?"5 4":null,
- fillColor:red?"#ed4357":yellow?"#ffb02e":state==="alert"?"#8792a6":"#8b9db0",
- fillOpacity:state==="alert"?(partial?.29:.47):state==="calm"?.025:.10};
+ const name=featureRegion(feature), item=currentStatus&&currentStatus[name];
+ const state=regionState(name), partial=item&&item.scope==="partial";
+ const red=state==="alert"&&item?.level==="red",yellow=state==="alert"&&item?.level==="yellow";
+ return {
+  color:red?"#ff8a9c":yellow?"#ffe294":"#4b7995",
+  weight:state==="alert"?1.8:0.85,opacity:state==="alert"?1:.7,
+  dashArray:partial?"6 4":null,
+  fillColor:red?"#e51d43":yellow?"#ffc12b":state==="alert"?"#8797a9":"#082339",
+  fillOpacity:state==="alert"?(partial?.39:.60):.16,
+  className:red?"oblast-alert-red":yellow?"oblast-alert-yellow":"oblast-neutral"
+ };
 }
 function redrawOblasts(){
  if(!oblastLayer)return;
@@ -252,6 +278,21 @@ async function loadOblasts(){
   const geo=await response.json();
   if(!geo||!Array.isArray(geo.features)||geo.features.length<20)throw new Error("Некоректні межі областей");
   oblastGeo=geo;
+  // A visible Ukrainian national border is drawn above all regional alert fills.
+  // Load a dedicated country boundary; do not substitute an oblast bounding rectangle.
+  try{
+   const boundaryResponse=await fetch("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson");
+   if(boundaryResponse.ok){
+    const countries=await boundaryResponse.json();
+    const ua=(countries.features||[]).find(f=>{
+     const p=f.properties||{};
+     return p.ISO3166_1_Alpha_3==="UKR"||p.ISO_A3==="UKR"||p.ADMIN==="Ukraine"||p.name==="Ukraine";
+    });
+    if(ua){
+     nationalOutline=L.geoJSON(ua,{style:{color:"#69d9ff",weight:3,opacity:1,fill:false,className:"national-outline"},interactive:false}).addTo(map);
+    }
+   }
+  }catch(err){console.warn("Country border temporarily unavailable",err);}
   oblastLayer=L.geoJSON(geo,{
    style:oblastStyle,
    onEachFeature(feature,layer){
@@ -270,6 +311,7 @@ async function loadOblasts(){
    }
   }).addTo(map);
   oblastLayer.bringToFront();
+  if(nationalOutline)nationalOutline.bringToFront();
   circle.bringToFront();marker.bringToFront();
   redrawOblasts();
  }catch(error){
