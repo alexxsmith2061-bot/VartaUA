@@ -149,10 +149,10 @@ a{color:#80f0ff;font-weight:600}
 </div>
 
 <div class="panel">
-<h3>🚨 Повітряна тривога</h3>
+<h3>🚨 Повітряна тривога</h3><div class="muted" id="oblastSummary">Карта областей завантажується…</div>
 <div id="alertStatus" class="status">Очікування даних...</div>
 <p class="muted" id="updated">Перевірка сервера...</p>
-<p class="muted">Джерело: <a href="https://alerts.in.ua/" target="_blank" rel="noopener">Alerts.in.ua</a></p>
+<p class="muted">Межі областей: <a href="https://github.com/darmat1/ukraine-geo-data" target="_blank" rel="noopener">Ukraine Geo Data</a> (геодані на основі OSM). Статуси через сервер VartaUA.</p><p class="muted">Джерело: <a href="https://alerts.in.ua/" target="_blank" rel="noopener">Alerts.in.ua</a></p>
 </div>
 
 <div class="panel">
@@ -183,7 +183,7 @@ a{color:#80f0ff;font-weight:600}
 <div class="note">
 <strong>VartaUA • Львівщина</strong>
 <div>🔵 Радіус від 5 до 150 км</div>
-<div>⚠️ Позиції повітряних цілей не відображаються</div>
+<div>🟥 Тривога · 🟩 Без тривоги · ⬜ Немає даних</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
 </div>
 </main>
 </div>
@@ -199,6 +199,73 @@ let soundEnabled=false;
 let audioContext=null;
 let previousAlert=null;
 let mapMode="street";
+let oblastLayer=null;
+let oblastGeo=null;
+let currentStatus=null;
+const GEO_SOURCE="https://cdn.jsdelivr.net/gh/darmat1/ukraine-geo-data@main/geodata/Ukraine.geojson";
+function normalizeOblastName(value){
+ const v=String(value||"").toLowerCase().replace(/['’]/g,"").replace(/[^а-щьюяєіїґa-z ]/gi,"").trim();
+ if(v.includes("крим"))return "Автономна Республіка Крим";
+ if(v.includes("севастопол"))return "м. Севастополь";
+ if(v.includes("київ")||v.includes("kyiv")){
+  return v.includes("област")||v.includes("oblast")||v.includes("ska")?"Київська область":"м. Київ";
+ }
+ const aliases={"львів":"Львівська","волин":"Волинська","вінниц":"Вінницька","дніпропетров":"Дніпропетровська","донець":"Донецька","житомир":"Житомирська","закарпат":"Закарпатська","запоріз":"Запорізька","іванофранків":"Івано-Франківська","кіровоград":"Кіровоградська","луган":"Луганська","миколаїв":"Миколаївська","одес":"Одеська","полтав":"Полтавська","рівнен":"Рівненська","сум":"Сумська","тернопіл":"Тернопільська","харків":"Харківська","херсон":"Херсонська","хмельниць":"Хмельницька","черкас":"Черкаська","чернівец":"Чернівецька","чернігів":"Чернігівська"};
+ for(const [prefix,name] of Object.entries(aliases))if(v.includes(prefix))return name+" область";
+ return String(value||"");
+}
+function featureRegion(feature){
+ const p=feature.properties||{};
+ return normalizeOblastName(p.name_uk||p.name||p.NAME_1||p.NAME||p.uk||p.region||p.oblast||"");
+}
+function regionState(name){
+ const region=currentStatus&&currentStatus[name];
+ if(!region)return "unk";
+ return typeof region==="string"?region:(region.state||region.status||"unk");
+}
+function oblastStyle(feature){
+ const state=regionState(featureRegion(feature));
+ return {color:state==="alert"?"#ff6076":"#8ad4f7",weight:1.5,opacity:.85,
+ fillColor:state==="alert"?"#e63b58":state==="calm"?"#14b98a":"#8b9db0",
+ fillOpacity:state==="alert"?.48:state==="calm"?.13:.19};
+}
+function redrawOblasts(){
+ if(!oblastLayer)return;
+ oblastLayer.setStyle(oblastStyle);
+ let active=0;
+ if(currentStatus)for(const [name,data] of Object.entries(currentStatus))
+  if(name!=="_meta"&&(typeof data==="string"?data:data&&data.state)==="alert")active++;
+ document.getElementById("oblastSummary").textContent=
+  currentStatus?"🔴 Областей із тривогою: "+active+" · натисни область на карті":"Очікуємо дані про тривоги…";
+}
+async function loadOblasts(){
+ try{
+  const response=await fetch(GEO_SOURCE);
+  if(!response.ok)throw new Error("GeoJSON "+response.status);
+  const geo=await response.json();
+  if(!geo||!Array.isArray(geo.features)||geo.features.length<20)throw new Error("Некоректні межі областей");
+  oblastGeo=geo;
+  oblastLayer=L.geoJSON(geo,{
+   style:oblastStyle,
+   onEachFeature(feature,layer){
+    const name=featureRegion(feature);
+    layer.bindPopup("<strong>"+name.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</strong><div class='oblast-popup-status'>Статус завантажується…</div>");
+    layer.on("click",()=>{
+     const state=regionState(name);
+     const label=currentStatus&&currentStatus._meta&&currentStatus._meta.fresh===true
+      ?state==="alert"?"🔴 Повітряна тривога":state==="calm"?"🟢 Немає обласної тривоги":"⚪ Статус невідомий"
+      :"⚪ Дані тимчасово недоступні";
+     layer.setPopupContent("<strong>"+name.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</strong><div>"+label+"</div>");
+    });
+   }
+  }).addTo(map);
+  oblastLayer.bringToBack();
+  redrawOblasts();
+ }catch(error){
+  document.getElementById("oblastSummary").textContent="Межі областей тимчасово недоступні";
+  console.warn("VartaUA oblast map:",error);
+ }
+}
 
 // Geographic guardrails: Ukraine and its immediate border buffer only.
 const UKRAINE_BOUNDS=L.latLngBounds([[43.1,21.0],[53.1,41.5]]);
@@ -419,6 +486,7 @@ async function updateStatus(){
    :(region.state||region.status||"unk");
 
   if(meta.fresh!==true){
+   currentStatus=null;redrawOblasts();
    setAlert("⚠️ Немає актуальних даних про тривоги","warn");
    document.getElementById("connection").textContent="⚠️ API недоступний";
    document.getElementById("updated").textContent=
@@ -427,6 +495,7 @@ async function updateStatus(){
    return;
   }
 
+  currentStatus=data;redrawOblasts();
   if(state==="alert"){
    setAlert("🔴 Повітряна тривога у Львівській області","alert");
   }else if(state==="calm"){
@@ -450,6 +519,7 @@ async function updateStatus(){
     "час невідомий");
 
  }catch(error){
+  currentStatus=null;redrawOblasts();
   setAlert("⚠️ Немає зв'язку із сервером тривог","warn");
   document.getElementById("connection").textContent="🔴 Помилка API";
   document.getElementById("updated").textContent=error.message;
@@ -458,6 +528,7 @@ async function updateStatus(){
 }
 
 fitRadius();
+loadOblasts();
 updateStatus();
 setInterval(updateStatus,20000);
 window.addEventListener("load",()=>map.invalidateSize());
