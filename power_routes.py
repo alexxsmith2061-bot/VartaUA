@@ -911,3 +911,141 @@ async def power_telegram_effective_date_check(queue: str = "4.2"):
                 "note": "Дата визначається тільки за явним текстом сьогодні/завтра. Без вказаної дати графік не підтверджено; це діагностика, не автоматичне застосування."}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося перевірити дату дії Telegram-повідомлень")
+
+
+# Read-only Telegram schedule notices. Never merge into the official schedule.
+_tg_cache = {"at": 0.0, "posts": None}
+_tg_lock = asyncio.Lock()
+_TG_INTERVAL = re.compile(r"(?<!\d)((?:[01]?\d|2[0-3]):[0-5]\d|24:00)\s*[-–—]\s*((?:[01]?\d|2[0-3]):[0-5]\d|24:00)(?!\d)")
+_TG_SECTION = re.compile(r"(?:Змінився\s+графік\s+для\s+)?Черга\s+([1-6]\.[12])\s*:", re.I)
+_TG_DATE = re.compile(r"(?<!\d)(\d{1,2})[./](\d{1,2})[./](20\d{2})(?!\d)")
+
+
+def _tg_intervals(fragment):
+    intervals = []
+    for start, end in _TG_INTERVAL.findall(fragment):
+        def minute(value):
+            hour, mins = map(int, value.split(":"))
+            return hour * 60 + mins
+        a, b = minute(start), minute(end)
+        if 0 <= a < b <= 1440 and (start, end) not in intervals:
+            intervals.append((start, end))
+    return [{"start": a, "end": b} for a, b in intervals]
+
+
+def _tg_target_date(text, published):
+    """Explicit date has priority. Relative dates are relative to publication in Kyiv."""
+    from datetime import date, timedelta
+    matches = _TG_DATE.findall(text[:450])
+    dates = []
+    for dd, mm, yyyy in matches:
+        try:
+            dates.append(date(int(yyyy), int(mm), int(dd)))
+        except ValueError:
+            pass
+    if len(set(dates)) == 1:
+        return dates[0], "explicit_date"
+    if len(set(dates)) > 1:
+        return None, "ambiguous_dates"
+    intro = text[:450].lower()
+    if re.search(r"\bна\s+завтра\b|\bзавтрашн", intro):
+        return published.date() + timedelta(days=1), "tomorrow_text"
+    if re.search(r"\bна\s+сьогодні\b|\bсьогоднішн", intro):
+        return published.date(), "today_text"
+    return None, "date_not_stated"
+
+
+def _tg_parse_post(block):
+    post = re.search(r'data-post="(lviv_bezsvitla/[0-9]+)"', block)
+    stamp = re.search(r'<time[^>]*datetime="([^"]+)"', block)
+    body_match = re.search(r'<div[^>]+class="[^"]*tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+    if not (post and stamp and body_match):
+        return None
+    try:
+        published = datetime.fromisoformat(stamp.group(1).replace("Z", "+00:00")).astimezone(KYIV)
+    except ValueError:
+        return None
+    body = html.unescape(re.sub(r'<[^>]+>', " ", re.sub(r'<br\s*/?>', " ", body_match.group(1), flags=re.I)))
+    effective, basis = _tg_target_date(body, published)
+    sections = list(_TG_SECTION.finditer(body))
+    queues = {}
+    for idx, section in enumerate(sections):
+        q = section.group(1)
+        part = body[section.end():sections[idx + 1].start() if idx + 1 < len(sections) else len(body)]
+        part = re.split(r"Джерело\s*:|Переглянути веб-версію|────────", part, maxsplit=1, flags=re.I)[0]
+        old = re.search(r"\bБуло\s*:", part, re.I)
+        new = re.search(r"\bСтало\s*:", part, re.I)
+        if old and new and old.start() < new.start():
+            previous = _tg_intervals(part[old.end():new.start()])
+            current = _tg_intervals(part[new.end():])
+            kind = "change"
+        elif old or new:
+            continue
+        else:
+            previous = None
+            current = _tg_intervals(part)
+            kind = "publication"
+        queues[q] = {"kind": kind, "previous": previous, "current": current}
+    return {"url": "https://t.me/" + post.group(1),
+            "published_at_kyiv": published.isoformat(),
+            "effective_date": effective.isoformat() if effective else None,
+            "date_basis": basis, "queues": queues}
+
+
+async def _tg_posts():
+    now = time.monotonic()
+    if _tg_cache["posts"] is not None and now - _tg_cache["at"] < 300:
+        return _tg_cache["posts"]
+    async with _tg_lock:
+        if _tg_cache["posts"] is not None and time.monotonic() - _tg_cache["at"] < 300:
+            return _tg_cache["posts"]
+        try:
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                response = await client.get("https://t.me/s/lviv_bezsvitla",
+                                            headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+                response.raise_for_status()
+                if len(response.content) > 1_000_000:
+                    raise ValueError("Завелика відповідь")
+                blocks = re.split(r'(?=<div[^>]+class="[^"]*tgme_widget_message_wrap)', response.text)
+                posts = [p for block in blocks if (p := _tg_parse_post(block))]
+            _tg_cache.update(at=time.monotonic(), posts=posts)
+            return posts
+        except (httpx.HTTPError, ValueError, TypeError):
+            if _tg_cache["posts"] is not None:
+                return _tg_cache["posts"]
+            raise HTTPException(503, "Telegram зараз недоступний")
+
+
+@router.get("/api/power/telegram-notices")
+async def power_telegram_notices(queue: str = "4.2"):
+    """Current-day and next-day queue notices with explicit effective dates only."""
+    from datetime import timedelta
+    if queue not in QUEUES:
+        raise HTTPException(400, "Невідома черга")
+    now = datetime.now(KYIV)
+    today, tomorrow = now.date(), now.date() + timedelta(days=1)
+    posts = await _tg_posts()
+    notices = []
+    undated = 0
+    for p in posts:
+        if queue not in p["queues"]:
+            continue
+        published = datetime.fromisoformat(p["published_at_kyiv"])
+        if published > now:
+            continue
+        if p["effective_date"] not in (today.isoformat(), tomorrow.isoformat()):
+            if p["effective_date"] is None:
+                undated += 1
+            continue
+        notices.append({"message_url": p["url"], "published_at_kyiv": p["published_at_kyiv"],
+                        "effective_date": p["effective_date"], "date_basis": p["date_basis"],
+                        "queue": queue, **p["queues"][queue]})
+    notices.sort(key=lambda p: p["published_at_kyiv"])
+    latest_by_day = {}
+    for item in notices:
+        latest_by_day[item["effective_date"]] = item
+    return {"queue": queue, "now_kyiv": now.isoformat(), "today_kyiv": today.isoformat(),
+            "tomorrow_kyiv": tomorrow.isoformat(), "source": "https://t.me/lviv_bezsvitla",
+            "official": False, "notices": notices, "latest_by_day": latest_by_day,
+            "undated_skipped": undated, "schedule_verified": False,
+            "note": "Telegram — стороннє повідомлення, не офіційний графік. Дата дії має бути явно визначена. Порожній список не означає наявності світла. Інтервали не застосовуються автоматично."}
