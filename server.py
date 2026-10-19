@@ -190,6 +190,11 @@ async def home():
     return FileResponse("index.html")
 
 
+@app.get("/api/build")
+async def build_info():
+    return {"app": "VartaUA", "power_router": True, "diagnostics_path": "/api/power/diagnostics", "build_marker": "fefc480-router-debug"}
+
+
 @app.get("/api/health")
 async def health():
     return {
