@@ -72,6 +72,29 @@ a{color:#80d2ff}
 a:hover{color:#c2ebff}
 .leaflet-control-zoom a{background:#18324b!important;color:#e4f6ff!important;border-color:#365b7b!important}
 @media(max-width:760px){header{padding:12px 14px}.panel{border-radius:15px}.note{bottom:18px}}
+
+/* Brighter, higher-contrast VartaUA palette */
+:root{--electric:#00c8ff;--sun:#ffdb37;--mint:#22f2c4}
+header{background:linear-gradient(110deg,#073a81 0%,#1252a1 48%,#083366 100%);border-bottom:2px solid #f5cf30}
+.logo{color:#fff;text-shadow:0 0 14px #42dfff,0 0 32px #1c9dff;font-size:26px}
+.header-right{display:flex;align-items:center;gap:14px}
+.ua-flag{display:inline-flex;align-items:center;justify-content:center;font-size:25px;width:44px;height:36px;border-radius:10px;background:#ffffff1a;border:1px solid #ffffff55;box-shadow:0 0 18px #ffdd3a44}
+aside{background:linear-gradient(165deg,#092b55,#0c2042 60%,#102d4b)}
+.panel{background:linear-gradient(135deg,#154b81,#17365f);border:1px solid #3186bc;box-shadow:0 9px 26px #00142b66}
+.panel:hover{border-color:#49dbff}
+h3{color:#fff}
+button,select{background:linear-gradient(125deg,#165f9b,#1677ad);border:1px solid #48baf0;color:#fff}
+button:hover{background:linear-gradient(125deg,#1788cf,#16a3d2)}
+button.active{background:linear-gradient(115deg,#00a5e9,#00d4e8);color:#002742;border-color:#b7faff;box-shadow:0 5px 20px #00d9ff65;font-weight:800}
+.value{color:var(--sun);text-shadow:0 0 15px #ffda3950}
+.status{background:#123c67;border-color:#3687b7}
+.status.alert{background:#9c2947;border-color:#ff627c}
+.status.calm{background:#08785c;border-color:#29efba}
+.status.warn{background:#856015;border-color:#ffdb37}
+a{color:#80f0ff;font-weight:600}
+.maptools{border-color:#25c9ee}
+.note{border-color:#26b6e5}
+@media(max-width:760px){.ua-flag{font-size:21px;width:38px;height:34px}.header-right{gap:7px}.logo{font-size:22px}}
 </style>
 </head>
 <body>
@@ -80,7 +103,7 @@ a:hover{color:#c2ebff}
 <div class="logo">🛡 VartaUA</div>
 <div class="muted">Моніторинг Львова та Львівської області</div>
 </div>
-<div class="muted" id="connection">Завантаження...</div>
+<div class="header-right"><span class="ua-flag" title="Україна" aria-label="Прапор України">🇺🇦</span><div class="muted" id="connection">Завантаження...</div></div>
 </header>
 
 <div class="layout">
