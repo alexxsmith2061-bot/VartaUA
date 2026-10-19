@@ -227,6 +227,8 @@ let mapMode="satellite";
 let oblastLayer=null;
 let oblastGeo=null;
 let nationalOutline=null;
+let threatMarkers=L.layerGroup();
+let cachedThreatRecords=[];
 let currentStatus=null;
 const GEO_SOURCE="https://cdn.jsdelivr.net/gh/darmat1/ukraine-geo-data@main/geodata/Ukraine.geojson";
 function normalizeOblastName(value){
@@ -311,6 +313,8 @@ async function loadOblasts(){
    }
   }).addTo(map);
   oblastLayer.bringToFront();
+  if(!map.hasLayer(threatMarkers))threatMarkers.addTo(map);
+  renderThreatMarkers();
   if(nationalOutline)nationalOutline.bringToFront();
   circle.bringToFront();marker.bringToFront();
   redrawOblasts();
@@ -592,6 +596,51 @@ const THREAT_NAMES={
 };
 const ALERT_NAMES={air_raid:"Повітряна тривога",artillery_shelling:"Артобстріл",
  urban_fights:"Вуличні бої",chemical:"Хімічна загроза",nuclear:"Радіаційна загроза"};
+
+function renderThreatMarkers(){
+ threatMarkers.clearLayers();
+ if(!oblastLayer||!cachedThreatRecords.length||!currentStatus?._meta?.fresh)return;
+ const groups=new Map();
+ for(const record of cachedThreatRecords){
+  if(record.alert_type!=="air_raid"||!Array.isArray(record.threats))continue;
+  const region=normalizeOblastName(record.location_oblast||record.location_title);
+  for(const t of record.threats){
+   if(!["drones","cruise_missiles","ballistic_missiles","unspecified_missiles","guided_aerial_bombs","tactic_aircraft_activity","strategic_aircraft_activity","mig31k_departure"].includes(t.threat_type))continue;
+   const key=region+"|"+t.threat_type;
+   if(!groups.has(key))groups.set(key,{region,type:t.threat_type,locations:new Set(),level:t.level});
+   groups.get(key).locations.add(record.location_title);
+   if(t.level==="red")groups.get(key).level="red";
+  }
+ }
+ const centroids=new Map();
+ oblastLayer.eachLayer(layer=>{
+  const name=featureRegion(layer.feature);
+  if(name&&layer.getBounds&&layer.getBounds().isValid())centroids.set(name,layer.getBounds().getCenter());
+ });
+ const byRegion=new Map();
+ for(const g of groups.values()){
+  if(!centroids.has(g.region))continue;
+  if(!byRegion.has(g.region))byRegion.set(g.region,[]);
+  byRegion.get(g.region).push(g);
+ }
+ for(const [region,items] of byRegion){
+  const pos=centroids.get(region);
+  items.slice(0,5).forEach((g,i)=>{
+   const angle=i*2.39996,offset=i===0?0:0.21*Math.sqrt(i);
+   const point=[pos.lat+Math.sin(angle)*offset,pos.lng+Math.cos(angle)*offset];
+   const symbol=g.type==="drones"?"◆":g.type.includes("aircraft")||g.type==="mig31k_departure"?"✈":"▲";
+   const color=g.level==="red"?"#ff5269":"#ffd15a";
+   const icon=L.divIcon({className:"varta-threat-icon",html:'<span style="display:grid;place-items:center;width:26px;height:26px;border:1px solid '+color+';border-radius:50%;background:#091b2de8;color:'+color+';font-size:17px;font-weight:900;box-shadow:0 0 10px '+color+'66">'+symbol+'</span>',iconSize:[26,26],iconAnchor:[13,13]});
+   const label=THREAT_NAMES[g.type]||g.type;
+   const popup=document.createElement("div");
+   const strong=document.createElement("strong");strong.textContent=label+" — "+region;popup.appendChild(strong);
+   const note=document.createElement("p");note.textContent="Умовний значок для області, НЕ місце перебування цілі. Кількість та напрямок невідомі.";popup.appendChild(note);
+   const places=document.createElement("p");places.textContent="Повідомлення: "+Array.from(g.locations).join(", ");popup.appendChild(places);
+   L.marker(point,{icon}).bindPopup(popup).addTo(threatMarkers);
+  });
+ }
+}
+
 async function updateThreatFeed(){
  const feed=document.getElementById("threatFeed");
  try{
@@ -600,6 +649,8 @@ async function updateThreatFeed(){
   const details=await response.json();
   if(!details.fresh){feed.textContent="⚠️ Джерело тимчасово недоступне; записи можуть бути застарілими.";return;}
   const records=(details.records||[]).filter(a=>a&&a.finished_at==null);
+  cachedThreatRecords=records;
+  renderThreatMarkers();
   if(!records.length){feed.textContent="Активних повідомлень у відповіді API немає.";return;}
   const fragment=document.createDocumentFragment();
   const count=document.createElement("div");
