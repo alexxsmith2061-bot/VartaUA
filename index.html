@@ -163,7 +163,7 @@ a{color:#80f0ff;font-weight:600}
 
 <div class="panel">
 <h3>📡 Повідомлення про загрози</h3>
-<p class="muted">Після підключення Telegram тут відображатимуться повідомлення про БпЛА, ракети, КАБи та інші загрози з часом і джерелом. Координати цілей не вигадуються.</p>
+<p class="muted">Усі активні типи загроз із Alerts.in.ua: області, райони, громади, рівні та час повідомлення. Це не координати повітряних цілей.</p><div id="threatFeed" class="muted" aria-live="polite">Очікуємо дані…</div>
 <a href="https://t.me/kpszsu" target="_blank" rel="noopener">Повітряні сили ЗСУ ↗</a>
 </div>
 
@@ -500,6 +500,7 @@ async function updateStatus(){
 
   if(meta.fresh!==true){
    currentStatus=null;redrawOblasts();
+   document.getElementById("threatFeed").textContent="⚠️ Дані застарілі; повідомлення не підтверджені зараз.";
    setAlert("⚠️ Немає актуальних даних про тривоги","warn");
    document.getElementById("connection").textContent="⚠️ API недоступний";
    document.getElementById("updated").textContent=
@@ -509,6 +510,7 @@ async function updateStatus(){
   }
 
   currentStatus=data;redrawOblasts();
+  updateThreatFeed();
   if(state==="alert"){
    setAlert("🔴 Повітряна тривога у Львівській області","alert");
   }else if(state==="calm"){
@@ -540,6 +542,43 @@ async function updateStatus(){
  }
 }
 
+const THREAT_NAMES={
+ drones:"БпЛА",cruise_missiles:"Крилаті ракети",ballistic_missiles:"Балістичні ракети",
+ unspecified_missiles:"Ракетна загроза",guided_aerial_bombs:"КАБ",
+ tactic_aircraft_activity:"Тактична авіація",strategic_aircraft_activity:"Стратегічна авіація",
+ mig31k_departure:"МіГ-31К",air_defense:"ППО",unknown:"Невизначена загроза"
+};
+const ALERT_NAMES={air_raid:"Повітряна тривога",artillery_shelling:"Артобстріл",
+ urban_fights:"Вуличні бої",chemical:"Хімічна загроза",nuclear:"Радіаційна загроза"};
+async function updateThreatFeed(){
+ const feed=document.getElementById("threatFeed");
+ try{
+  const response=await fetch("/api/alerts/details",{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const details=await response.json();
+  if(!details.fresh){feed.textContent="⚠️ Джерело тимчасово недоступне; записи можуть бути застарілими.";return;}
+  const records=(details.records||[]).filter(a=>a&&a.finished_at==null);
+  if(!records.length){feed.textContent="Активних повідомлень у відповіді API немає.";return;}
+  const fragment=document.createDocumentFragment();
+  const count=document.createElement("div");
+  count.textContent="Активних записів: "+records.length+" · остання перевірка: "+new Date(details.updated_at).toLocaleTimeString("uk-UA");
+  fragment.appendChild(count);
+  for(const a of records.slice(0,70)){
+   const line=document.createElement("div");
+   line.style.cssText="padding:8px 0;border-bottom:1px solid #ffffff22;line-height:1.5";
+   const threats=(a.threats||[]).map(t=>(THREAT_NAMES[t.threat_type]||t.threat_type)+(t.level==="red"?" 🔴":t.level==="yellow"?" 🟡":"")).join(", ");
+   const place=[a.location_title,a.location_raion&&a.location_type!=="raion"?a.location_raion:""].filter(Boolean).join(" · ");
+   line.textContent=(a.alert_level==="red"?"🔴 ":a.alert_level==="yellow"?"🟡 ":"⚪ ")+
+    (ALERT_NAMES[a.alert_type]||a.alert_type||"Загроза")+" — "+place+
+    (threats?" | "+threats:"")+
+    (a.started_at?" | "+new Date(a.started_at).toLocaleString("uk-UA"):"")+
+    (a.notes?" | "+a.notes:"");
+   fragment.appendChild(line);
+  }
+  if(records.length>70){const more=document.createElement("div");more.textContent="Ще "+(records.length-70)+" записів доступні через /api/alerts/details";fragment.appendChild(more);}
+  feed.replaceChildren(fragment);
+ }catch(e){feed.textContent="Не вдалося завантажити деталі загроз: "+e.message;}
+}
 map.fitBounds([[44.3,22.2],[52.3,40.3]],{padding:[15,15]});
 loadOblasts();
 updateStatus();
