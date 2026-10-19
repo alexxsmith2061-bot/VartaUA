@@ -232,9 +232,23 @@ async def _official_directory(kind: str, city_id: int | None = None):
                 if not isinstance(row, dict) or not isinstance(row.get("id"), int) or not isinstance(row.get("name"), str):
                     continue
                 item = {"id": row["id"], "name": row["name"]}
+                # Different API representations can embed the OTG as an object,
+                # a numeric identifier, or an API Platform IRI.
                 otg = row.get("otg")
-                if isinstance(otg, dict) and isinstance(otg.get("id"), int):
-                    item["otg_id"] = otg["id"]
+                otg_id = None
+                if isinstance(otg, dict):
+                    otg_id = otg.get("id")
+                    if otg_id is None:
+                        otg_id = otg.get("@id")
+                elif isinstance(otg, (int, str)):
+                    otg_id = otg
+                if otg_id is None:
+                    otg_id = row.get("otgId", row.get("otg_id"))
+                if isinstance(otg_id, str):
+                    match = re.fullmatch(r"(?:/api/pw_otgs/)?(\\d+)", otg_id)
+                    otg_id = int(match.group(1)) if match else None
+                if isinstance(otg_id, int) and otg_id > 0:
+                    item["otg_id"] = otg_id
                 result.append(item)
             if not result:
                 raise ValueError("Довідник порожній")
