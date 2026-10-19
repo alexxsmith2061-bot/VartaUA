@@ -12,7 +12,7 @@
 <header><h1>⚡ VartaUA · Світло Львівщини</h1><a href="/">← Назад до карти</a></header>
 <main>
 <div class="warning"><strong>Увага:</strong> показуємо опублікований графік погодинних відключень, а не фактичну наявність напруги в будинку. Аварійні та екстрені відключення можуть відрізнятися.</div>
-<section class="panel"><h2>🏠 Чому немає світла? · Перевірка адреси</h2><p class="muted">Населені пункти та вулиці завантажуються з офіційного довідника. Дані адрес надходять із Львівобленерго. Якщо сервіс будинків недоступний, VartaUA не вгадує чергу.</p><label for="city-search">Пошук населеного пункту</label><input id="city-search" placeholder="Наприклад, Рудно" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="city">Населений пункт</label><select id="city" style="width:100%" disabled><option>Завантаження…</option></select><label for="street-search">Пошук вулиці</label><input id="street-search" placeholder="Наприклад, Богуна" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="street">Вулиця</label><select id="street" style="width:100%" disabled><option>Оберіть населений пункт</option></select><label for="house">Будинок</label><select id="house" style="width:100%" disabled><option>Спочатку вибери вулицю</option></select><div class="status" id="address-result" style="margin-top:14px">Вибери населений пункт, вулицю та будинок. Дані беремо з Львівобленерго.</div><p class="muted" id="address-status">Завантажуємо офіційний довідник…</p><p class="muted">Джерело адрес: Львівобленерго. Якщо офіційний сервіс не повернув чергу, її не можна визначити автоматично.</p></section>
+<section class="panel"><h2>🏠 Чому немає світла? · Перевірка адреси</h2><p class="muted">Населені пункти та вулиці завантажуються з офіційного довідника. Дані адрес надходять із Львівобленерго. Якщо сервіс будинків недоступний, VartaUA не вгадує чергу.</p><label for="city-search">Пошук населеного пункту</label><input id="city-search" list="city-suggestions" autocomplete="off" placeholder="Почни вводити: Рудно" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><datalist id="city-suggestions"></datalist><select id="city" hidden disabled aria-hidden="true"><option>Завантаження…</option></select><label for="street-search">Пошук вулиці</label><input id="street-search" list="street-suggestions" autocomplete="off" placeholder="Почни вводити: Богуна" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><datalist id="street-suggestions"></datalist><select id="street" hidden disabled aria-hidden="true"><option>Оберіть населений пункт</option></select><label for="house">Будинок</label><select id="house" style="width:100%" disabled><option>Спочатку вибери вулицю</option></select><div class="status" id="address-result" style="margin-top:14px">Вибери населений пункт, вулицю та будинок. Дані беремо з Львівобленерго.</div><p class="muted" id="address-status">Завантажуємо офіційний довідник…</p><p class="muted">Джерело адрес: Львівобленерго. Якщо офіційний сервіс не повернув чергу, її не можна визначити автоматично.</p></section>
 <section class="panel"><h2>📅 Діючі графіки · Обери чергу</h2><p class="muted">Обрана черга зберігається лише у твоєму браузері.</p><div class="queue-grid" id="queues"></div></section>
 <section class="panel"><h2 id="title">📅 Графік відключень</h2><div id="status" class="status" role="status">Завантажуємо дані…</div>
 <label for="day">Дата графіка</label><select id="day" disabled><option>Завантаження…</option></select>
@@ -85,14 +85,25 @@ function fillOptions(id,items,placeholder){
  el.disabled=!items.length;if(items.some(x=>String(x.id)===previous))el.value=previous;
 }
 function filterDirectory(kind){
- const isCity=kind==="city",query=$(isCity?"city-search":"street-search").value.trim().toLocaleLowerCase("uk");
- const entries=(isCity?cities:streets).filter(x=>x.name.toLocaleLowerCase("uk").includes(query));
- fillOptions(isCity?"city":"street",entries,isCity?"Оберіть населений пункт":"Оберіть вулицю");
+ const isCity=kind==="city", input=$(isCity?"city-search":"street-search");
+ const entries=isCity?cities:streets;
+ const query=input.value.trim().toLocaleLowerCase("uk");
+ const matching=entries.filter(x=>x.name.toLocaleLowerCase("uk").includes(query)).slice(0,30);
+ const list=$(isCity?"city-suggestions":"street-suggestions");
+ list.replaceChildren();
+ for(const item of matching){const option=document.createElement("option");option.value=item.name;list.append(option)}
+ const exact=entries.filter(x=>x.name.toLocaleLowerCase("uk")===query);
+ const select=$(isCity?"city":"street");
+ const next=exact.length===1?String(exact[0].id):"";
+ if(select.value!==next){
+  select.value=next;
+  select.dispatchEvent(new Event("change"));
+ }
 }
 async function initAddresses(){
  try{
   const r=await fetch("/api/power/cities");if(!r.ok)throw Error("HTTP "+r.status);
-  cities=(await r.json()).items||[];filterDirectory("city");
+  cities=(await r.json()).items||[];fillOptions("city",cities,"Оберіть населений пункт");filterDirectory("city");
   $("address-status").textContent="Населених пунктів: "+cities.length+". Вибери свій населений пункт.";
  }catch(e){$("address-status").textContent="Офіційний адресний довідник зараз недоступний: "+e.message}
 }
@@ -100,13 +111,13 @@ $("city-search").oninput=()=>filterDirectory("city");
 $("street-search").oninput=()=>filterDirectory("street");
 $("city").onchange=async()=>{
  const id=$("city").value;streets=[];fillOptions("street",[],"Завантаження…");fillOptions("house",[],"Спочатку вибери вулицю");
- if(!id)return;
+ if(!id){$("address-status").textContent="Вибери населений пункт із підказок.";return;}
  $("address-status").textContent="Завантажуємо вулиці…";
  try{
   const r=await fetch("/api/power/streets?city_id="+encodeURIComponent(id));
   if(!r.ok)throw Error("HTTP "+r.status);
-  streets=(await r.json()).items||[];filterDirectory("street");
-  $("address-status").textContent="Вулиць у довіднику: "+streets.length+". Для номера будинку перевір чергу на офіційному сайті.";
+  streets=(await r.json()).items||[];fillOptions("street",streets,"Оберіть вулицю");filterDirectory("street");
+  $("address-status").textContent="Вулиць у довіднику: "+streets.length+". Почни вводити назву вулиці та вибери підказку.";
  }catch(e){$("address-status").textContent="Не вдалося отримати вулиці: "+e.message}
 };
 $("street").onchange=async()=>{
