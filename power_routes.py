@@ -611,3 +611,31 @@ async def power_outage_schema(otg_id: int):
                 "note": "Лише структура першої сторінки, без значень записів"}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося отримати структуру відключень")
+
+
+@router.get("/api/power/schedule-source-check")
+async def power_schedule_source_check():
+    """Check a candidate external schedule API without treating it as official."""
+    url = "https://dkr.ova.net.ua/api/schedule"
+    try:
+        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+            response = await client.get(url, headers={"Accept": "application/json"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика відповідь")
+            payload = response.json()
+        if isinstance(payload, dict):
+            keys = sorted(str(k) for k in payload.keys())[:40]
+            shapes = {str(k): type(v).__name__ for k, v in list(payload.items())[:40]}
+            return {"available": True, "candidate_source": url, "official": False,
+                    "root_type": "object", "root_keys": keys, "value_types": shapes,
+                    "checked_at": datetime.now(timezone.utc).isoformat(),
+                    "note": "Тільки діагностика формату; графік не використовується без перевірки актуальності"}
+        if isinstance(payload, list):
+            return {"available": True, "candidate_source": url, "official": False,
+                    "root_type": "array", "item_count": len(payload),
+                    "first_item_keys": sorted(payload[0].keys())[:40] if payload and isinstance(payload[0], dict) else [],
+                    "checked_at": datetime.now(timezone.utc).isoformat()}
+        raise ValueError("Непідтримуваний формат")
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Кандидатне джерело недоступне або повернуло невідомий формат")
