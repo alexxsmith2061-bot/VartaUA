@@ -12,14 +12,14 @@
 <header><h1>⚡ VartaUA · Світло Львівщини</h1><a href="/">← Назад до карти</a></header>
 <main>
 <div class="warning"><strong>Увага:</strong> показуємо опублікований графік погодинних відключень, а не фактичну наявність напруги в будинку. Аварійні та екстрені відключення можуть відрізнятися.</div>
-<section class="panel"><h2>🔌 Обери чергу</h2><p class="muted">Обрана черга зберігається лише у твоєму браузері.</p><div class="queue-grid" id="queues"></div></section>
+<section class="panel"><h2>🔌 Черга погодинних відключень</h2><p class="muted">Обрана черга зберігається лише у твоєму браузері.</p><div class="queue-grid" id="queues"></div></section>
 <section class="panel"><h2 id="title">📅 Графік відключень</h2><div id="status" class="status" role="status">Завантажуємо дані…</div>
 <label for="day">Дата графіка</label><select id="day" disabled><option>Завантаження…</option></select>
 <div id="timeline" class="timeline" aria-label="Погодинний графік"></div>
 <div id="legend" class="legend" hidden><span><i class="dot yes"></i>Світло є за графіком</span><span><i class="dot no"></i>Відключення</span><span><i class="dot maybe"></i>Можливе відключення</span><span>◩ Півгодинне відключення</span></div>
 <p class="muted" id="updated"></p><div class="actions"><button id="refresh">↻ Оновити дані</button></div>
 </section>
-<section class="panel"><h2>🏠 Пошук адреси у Львівобленерго</h2><p class="muted">Населені пункти та вулиці завантажуються з офіційного довідника. Автоматичне визначення черги за номером будинку ще не підключене — не підставляємо випадкову чергу.</p><label for="city-search">Пошук населеного пункту</label><input id="city-search" placeholder="Наприклад, Рудно" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="city">Населений пункт</label><select id="city" style="width:100%" disabled><option>Завантаження…</option></select><label for="street-search">Пошук вулиці</label><input id="street-search" placeholder="Наприклад, Богуна" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="street">Вулиця</label><select id="street" style="width:100%" disabled><option>Оберіть населений пункт</option></select><p class="muted" id="address-status">Завантажуємо офіційний довідник…</p><p class="muted">Для підтвердження черги конкретного будинку поки користуйся <a href="https://poweron.loe.lviv.ua/shedule-off" target="_blank" rel="noopener noreferrer">офіційним адресним пошуком</a>, після чого обери чергу вище.</p></section>
+<section class="panel"><h2>🏠 Дізнатися чергу за адресою</h2><p class="muted">Населені пункти та вулиці завантажуються з офіційного довідника. Дані адрес надходять із Львівобленерго. Якщо сервіс будинків недоступний, VartaUA не вгадує чергу.</p><label for="city-search">Пошук населеного пункту</label><input id="city-search" placeholder="Наприклад, Рудно" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="city">Населений пункт</label><select id="city" style="width:100%" disabled><option>Завантаження…</option></select><label for="street-search">Пошук вулиці</label><input id="street-search" placeholder="Наприклад, Богуна" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="street">Вулиця</label><select id="street" style="width:100%" disabled><option>Оберіть населений пункт</option></select><label for="house">Будинок</label><select id="house" style="width:100%" disabled><option>Спочатку вибери вулицю</option></select><div class="status" id="address-result" style="margin-top:14px">Вибери адресу, щоб визначити чергу.</div><p class="muted" id="address-status">Завантажуємо офіційний довідник…</p><p class="muted">Джерело адрес: Львівобленерго. Якщо офіційний сервіс не повернув чергу, її не можна визначити автоматично.</p></section>
 <p class="muted">Джерело поточного графіка: <a id="source-link" href="https://poweron.loe.lviv.ua/" target="_blank" rel="noopener noreferrer">перевіряємо…</a>. VartaUA не є офіційним сайтом обленерго.</p>
 </main>
 <script>
@@ -46,7 +46,7 @@ function render(){
  if(!selected){$("status").textContent="Оберіть свою чергу.";return}
  const slots=source.days?.[day]?.[selected];
  if(!Array.isArray(slots)||slots.length!==24){
-  $("status").textContent=source.stale?"Джерело давно не оновлювалося. Не показуємо застарілий графік.":source.error?"Немає актуальних даних. Помилка джерела: "+source.error:"Немає підтвердженого графіка на вибрану дату.";
+  $("status").textContent="Черга "+selected+": "+(source.stale?"Джерело давно не оновлювалося. Не показуємо застарілий графік.":source.error?"Немає актуальних даних. Помилка джерела: "+source.error:"Немає підтвердженого графіка на вибрану дату.") ;
   return;
  }
  const isToday=day===source.today;
@@ -77,7 +77,7 @@ async function load(){
   render();
  }catch(e){source=null;$("day").disabled=true;$("timeline").replaceChildren();$("legend").hidden=true;$("status").textContent="Не вдалося завантажити графік: "+e.message}
 }
-let cities=[],streets=[];
+let cities=[],streets=[],houses=[];
 function fillOptions(id,items,placeholder){
  const el=$(id), previous=el.value;el.replaceChildren();
  const first=document.createElement("option");first.value="";first.textContent=placeholder;el.append(first);
@@ -99,7 +99,7 @@ async function initAddresses(){
 $("city-search").oninput=()=>filterDirectory("city");
 $("street-search").oninput=()=>filterDirectory("street");
 $("city").onchange=async()=>{
- const id=$("city").value;streets=[];fillOptions("street",[],"Завантаження…");
+ const id=$("city").value;streets=[];fillOptions("street",[],"Завантаження…");fillOptions("house",[],"Спочатку вибери вулицю");
  if(!id)return;
  $("address-status").textContent="Завантажуємо вулиці…";
  try{
@@ -108,6 +108,30 @@ $("city").onchange=async()=>{
   streets=(await r.json()).items||[];filterDirectory("street");
   $("address-status").textContent="Вулиць у довіднику: "+streets.length+". Для номера будинку перевір чергу на офіційному сайті.";
  }catch(e){$("address-status").textContent="Не вдалося отримати вулиці: "+e.message}
+};
+$("street").onchange=async()=>{
+ const city=$("city").value,street=$("street").value;
+ houses=[];fillOptions("house",[],"Завантаження будинків…");
+ $("address-result").textContent="Перевіряємо адресу у Львівобленерго…";
+ if(!city||!street){$("address-result").textContent="Оберіть населений пункт і вулицю.";return}
+ try{
+  const r=await fetch("/api/power/houses?city_id="+encodeURIComponent(city)+"&street_id="+encodeURIComponent(street));
+  if(!r.ok)throw Error("HTTP "+r.status);
+  const data=await r.json();houses=data.houses||[];
+  const unique=[...new Set(houses.map(x=>x.house))].sort((a,b)=>a.localeCompare(b,"uk",{numeric:true}));
+  fillOptions("house",unique.map((house,i)=>({id:i+1,name:house})),"Оберіть будинок");
+  $("address-result").textContent=unique.length?"Оберіть номер будинку.":"Офіційний API не повернув розпізнаних номерів будинків. Чергу не визначено.";
+ }catch(e){$("address-result").textContent="Офіційний сервіс будинків зараз недоступний. Чергу не визначено ("+e.message+")."}
+};
+$("house").onchange=()=>{
+ const index=Number($("house").value)-1;
+ const unique=[...new Set(houses.map(x=>x.house))].sort((a,b)=>a.localeCompare(b,"uk",{numeric:true}));
+ const house=unique[index];if(!house)return;
+ const found=[...new Set(houses.filter(x=>x.house===house&&x.queue).map(x=>x.queue))];
+ if(found.length===1){
+  selected=found[0];localStorage.setItem("vartaua_queue",selected);buttons();render();
+  $("address-result").textContent="Будинок "+house+" · підтверджена черга "+selected+". Графік показано вище, якщо він опублікований.";
+ }else $("address-result").textContent="Будинок "+house+": офіційний API не повернув однозначної черги. Дані не підставляємо.";
 };
 initAddresses();
 $("day").onchange=render;$("refresh").onclick=load;buttons();load();setInterval(load,300000);
