@@ -192,6 +192,11 @@ h3{color:#dff5ff}
 </div>
 
 <div class="panel">
+<h3>📨 Оперативні повідомлення · Захід</h3>
+<p class="muted">Оригінальні публікації Повітряних сил та war_monitor_ua. Пріоритет: Львівщина і сусідні області. Повідомлення не означають підтверджених координат цілей.</p>
+<div id="telegramFeed" class="muted">Підключення джерел…</div>
+</div>
+<div class="panel">
 <h3>⚡ Електроенергія</h3>
 <a href="/power">Перевірити світло за адресою →</a>
 </div>
@@ -672,10 +677,40 @@ async function updateThreatFeed(){
   feed.replaceChildren(fragment);
  }catch(e){feed.textContent="Не вдалося завантажити деталі загроз: "+e.message;}
 }
+async function updateTelegramFeed(){
+ const target=document.getElementById("telegramFeed");
+ try{
+  const response=await fetch("/api/telegram/alerts",{cache:"no-store"});
+  if(!response.ok)throw Error("HTTP "+response.status);
+  const data=await response.json();
+  if(!data.status?.connected){
+   target.textContent="Telegram-моніторинг ще не підключено. Налаштуйте серверні облікові дані; статус: "+(data.status?.error||"очікування");
+   return;
+  }
+  const items=data.items||[];
+  if(!items.length){target.textContent="Немає нових повідомлень за останні 6 годин щодо Львівщини та сусідніх областей.";return;}
+  const fragment=document.createDocumentFragment();
+  for(const item of items.slice(0,35)){
+   const block=document.createElement("div");
+   block.style.cssText="border-bottom:1px solid #3b6482;padding:10px 0";
+   const link=document.createElement("a");
+   link.href=item.url;link.target="_blank";link.rel="noopener noreferrer";
+   link.textContent=(item.source_type==="official"?"Офіційне джерело":"Моніторинговий канал")+" · "+new Date(item.published_at).toLocaleString("uk-UA");
+   const region=document.createElement("div");
+   region.style.cssText="color:#ffd16a;margin:4px 0";
+   region.textContent=item.regions.join(", ");
+   const body=document.createElement("div");body.textContent=item.text;body.style.whiteSpace="pre-wrap";
+   block.append(link,region,body);fragment.appendChild(block);
+  }
+  target.replaceChildren(fragment);
+ }catch(err){target.textContent="Помилка завантаження повідомлень: "+err.message;}
+}
 map.fitBounds([[44.3,22.2],[52.3,40.3]],{padding:[15,15]});
 loadOblasts();
 updateStatus();
+updateTelegramFeed();
 setInterval(updateStatus,20000);
+setInterval(updateTelegramFeed,60000);
 window.addEventListener("load",()=>map.invalidateSize());
 </script>
 </body>
