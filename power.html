@@ -20,6 +20,7 @@
 <div id="legend" class="legend" hidden><span><i class="dot yes"></i>Світло є за графіком</span><span><i class="dot no"></i>Відключення</span><span><i class="dot maybe"></i>Можливе відключення</span><span>◩ Півгодинне відключення</span></div>
 <p class="muted" id="updated"></p><div class="actions"><button id="refresh">↻ Оновити дані</button></div>
 </section>
+<section class="panel"><h2>📨 Telegram · зміни графіка</h2><div id="tg-notices" class="status">Завантаження…</div><p class="muted">Повідомлення стороннього каналу. Не замінюють офіційний графік.</p></section>
 <p class="muted">Джерело поточного графіка: <a id="source-link" href="https://poweron.loe.lviv.ua/" target="_blank" rel="noopener noreferrer">перевіряємо…</a>. VartaUA не є офіційним сайтом обленерго.</p>
 </main>
 <script>
@@ -193,5 +194,26 @@ function refreshCurrentAddress(){
 setInterval(refreshCurrentAddress,120000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshCurrentAddress()});
 $("day").onchange=render;$("refresh").onclick=load;buttons();load();setInterval(load,300000);
+
+async function refreshTelegramNotices(){
+ const box=$("tg-notices");if(!selected){box.textContent="Вибери чергу.";return}
+ const queue=selected, day=$("day").value;
+ try{
+  const res=await fetch("/api/power/telegram-notices?queue="+encodeURIComponent(queue),{cache:"no-store"});
+  if(!res.ok)throw Error("HTTP "+res.status);
+  const data=await res.json();if(queue!==selected)return;
+  const item=data.latest_by_day?.[day||data.today_kyiv];
+  box.replaceChildren();
+  const p=document.createElement("p");
+  p.textContent=item?"Повідомлення на "+item.effective_date+": "+(item.current.length?item.current.map(i=>i.start+"–"+i.end).join(", "):"інтервалів не зазначено")+". Це не офіційний графік.":"Немає повідомлень із підтвердженою датою дії для цієї черги. Це не означає, що відключень немає.";
+  box.append(p);
+  if(item){const a=document.createElement("a");a.href=item.message_url;a.target="_blank";a.rel="noopener noreferrer";a.textContent="Джерело в Telegram";box.append(a)}
+ }catch(e){box.textContent="Telegram тимчасово недоступний. Перевіряйте офіційний графік."}
+}
+$("queues").addEventListener("click",refreshTelegramNotices);
+$("house").addEventListener("change",refreshTelegramNotices);
+$("day").addEventListener("change",refreshTelegramNotices);
+setInterval(refreshTelegramNotices,300000);
+refreshTelegramNotices();
 </script>
 </body></html>
