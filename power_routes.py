@@ -697,3 +697,30 @@ async def power_svitlo_api_check():
                 "note": "Лише статичні відносні шляхи; динамічні запити можуть бути не знайдені"}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося перевірити відкритий JavaScript")
+
+
+@router.get("/api/power/telegram-source-check")
+async def power_telegram_source_check():
+    """Read-only check of the public Telegram preview; no user sessions or credentials."""
+    url = "https://t.me/s/lviv_bezsvitla"
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика сторінка")
+            page = response.text
+        ids = re.findall(r'data-post="(lviv_bezsvitla/[0-9]+)"', page)
+        dates = re.findall(r'<time[^>]*datetime="([^"]+)"', page)
+        return {
+            "available": True, "source": "https://t.me/lviv_bezsvitla",
+            "public_preview": url, "official": False,
+            "message_count": len(ids),
+            "latest_message_id": ids[-1] if ids else None,
+            "latest_message_url": "https://t.me/" + ids[-1] if ids else None,
+            "latest_message_date": dates[-1] if dates else None,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "note": "Перевірка публічного прев'ю; не підтверджує актуальність графіків або дозвіл на републікацію"
+        }
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Публічне прев'ю Telegram недоступне з сервера")
