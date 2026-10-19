@@ -810,3 +810,48 @@ async def power_telegram_queue_check(queue: str = "4.2"):
                 "note": "Фрагменти тексту для перевірки формату, не підтверджений графік"}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося перевірити повідомлення каналу")
+
+
+@router.get("/api/power/telegram-today-check")
+async def power_telegram_today_check(queue: str = "4.2"):
+    """Only messages published today in Kyiv; never interpret old posts as today's schedule."""
+    if queue not in QUEUES:
+        raise HTTPException(400, "Невідома черга")
+    now = datetime.now(KYIV)
+    today = now.date().isoformat()
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get("https://t.me/s/lviv_bezsvitla",
+                                        headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика сторінка")
+            page = response.text
+        blocks = re.split(r'(?=<div[^>]+class="[^"]*tgme_widget_message_wrap)', page)
+        relevant = []
+        for block in blocks:
+            post = re.search(r'data-post="(lviv_bezsvitla/[0-9]+)"', block)
+            date_match = re.search(r'<time[^>]*datetime="([^"]+)"', block)
+            body_match = re.search(r'<div[^>]+class="[^"]*tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+            if not post or not date_match or not body_match:
+                continue
+            try:
+                published = datetime.fromisoformat(date_match.group(1).replace("Z", "+00:00")).astimezone(KYIV)
+            except ValueError:
+                continue
+            if published.date().isoformat() != today or published > now:
+                continue
+            body = html.unescape(re.sub(r'<[^>]+>', " ", body_match.group(1)))
+            if not re.search(r'(?<![0-9])' + re.escape(queue) + r'(?![0-9])', body):
+                continue
+            relevant.append({"message_url": "https://t.me/" + post.group(1),
+                             "published_at_kyiv": published.isoformat(),
+                             "queue": queue})
+        return {"source": "https://t.me/lviv_bezsvitla", "official": False,
+                "today_kyiv": today, "now_kyiv": now.isoformat(),
+                "queue": queue, "today_messages": relevant,
+                "today_message_count": len(relevant),
+                "schedule_verified": False,
+                "note": "Фільтр за датою публікації. Повідомлення про графік на завтра потребують окремого визначення дати дії; відсутність повідомлень не означає наявності світла"}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося перевірити сьогоднішні повідомлення")
