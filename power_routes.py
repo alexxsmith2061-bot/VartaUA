@@ -566,8 +566,25 @@ async def power_outage_schema(otg_id: int):
             values = [row.get(key) for row in sample if isinstance(row.get(key), str)]
             formats[key] = {"nonempty_in_sample": sum(bool(v.strip()) for v in values),
                             "max_length": max((len(v) for v in values), default=0)}
+        address_formats = []
+        for row in sample:
+            value = row.get("buildingNames")
+            if not isinstance(value, str):
+                continue
+            address_formats.append({
+                "length": len(value),
+                "has_comma": "," in value,
+                "has_semicolon": ";" in value,
+                "has_newline": "\\n" in value,
+                "has_slash": "/" in value,
+                "has_letters": bool(re.search(r"[А-Яа-яІіЇїЄєA-Za-z]", value)),
+                "has_digits": bool(re.search(r"\\d", value)),
+                "looks_like_json": value.lstrip().startswith(("[", "{")),
+                "approx_comma_parts": min(value.count(",") + 1, 100),
+                "approx_semicolon_parts": min(value.count(";") + 1, 100),
+            })
         return {"available": True, "otg_id": otg_id, "total_items": total,
-                "sample_size": len(sample), "page_items": len(members), "field_types": shapes, "sample_codes": codes, "sample_formats": formats,
+                "sample_size": len(sample), "page_items": len(members), "field_types": shapes, "sample_codes": codes, "sample_formats": formats, "building_format_samples": address_formats,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
                 "note": "Лише структура першої сторінки, без значень записів"}
     except (httpx.HTTPError, ValueError, TypeError):
