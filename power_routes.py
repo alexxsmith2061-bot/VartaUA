@@ -260,6 +260,47 @@ async def _official_directory(kind: str, city_id: int | None = None):
             raise HTTPException(503, "Офіційний адресний довідник тимчасово недоступний")
 
 
+@router.get("/api/power/city-diagnostics")
+async def power_city_diagnostics(city_id: int):
+    """Safe diagnostics: inspect public directory metadata without account records."""
+    if city_id < 1:
+        raise HTTPException(400, "Некоректний код міста")
+    result = {"city_id": city_id}
+    try:
+        cities = await _official_directory("cities")
+        city = next((item for item in cities if item["id"] == city_id), None)
+        result["directory_found"] = city is not None
+        result["directory_otg_id"] = city.get("otg_id") if city else None
+    except HTTPException:
+        result["directory_error"] = "Довідник недоступний"
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(
+                "https://power-api.loe.lviv.ua/api/pw_cities",
+                params={"id": city_id, "pagination": "false"},
+                headers={"Accept": "application/ld+json, application/json"})
+            response.raise_for_status()
+            if len(response.content) > 3_000_000:
+                raise ValueError("Завелика відповідь")
+            payload = response.json()
+        rows = payload.get("hydra:member") if isinstance(payload, dict) else payload
+        if not isinstance(rows, list):
+            raise ValueError("Невідомий формат")
+        matching = next((row for row in rows if isinstance(row, dict) and row.get("id") == city_id), None)
+        result["direct_found"] = matching is not None
+        if matching:
+            result["field_names"] = sorted(matching.keys())[:50]
+            for key in ("otg", "otgId", "otg_id", "territorialCommunity"):
+                value = matching.get(key)
+                if isinstance(value, dict):
+                    result[key] = {"field_names": sorted(value.keys())[:20], "id": value.get("id"), "iri": value.get("@id")}
+                elif isinstance(value, (int, str)):
+                    result[key] = str(value)[:100]
+    except (httpx.HTTPError, ValueError, TypeError):
+        result["direct_error"] = "Не вдалося отримати запис"
+    return result
+
+
 @router.get("/api/power/cities")
 async def power_cities():
     return {"items": await _official_directory("cities")}
