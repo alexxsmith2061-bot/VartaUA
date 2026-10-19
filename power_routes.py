@@ -321,7 +321,10 @@ async def power_diagnostics():
                                 plain = html.unescape(re.sub(r"<[^>]+>", " ", raw))
                                 plain = " ".join(plain.split())
                                 samples.append({"name": str(item.get("name", ""))[:80],
-                                                "html_length": len(raw), "text_preview": plain[:400]})
+                                                "html_length": len(raw), "text_preview": plain[:400],
+                                                "fields": sorted(item.keys())[:35],
+                                                "field_shapes": {str(k)[:50]: ("list:"+str(len(v)) if isinstance(v,list) else "object:"+",".join(list(v.keys())[:8]) if isinstance(v,dict) else "string:"+str(len(v)) if isinstance(v,str) else type(v).__name__) for k,v in item.items() if k not in ("rawHtml",)},
+                                                "menu_fields": sorted(menu.keys())[:20]})
                         info["samples"] = samples
                     elif name == "cities" and isinstance(rows, list) and rows and isinstance(rows[0], dict):
                         info["fields"] = sorted(rows[0].keys())[:20]
