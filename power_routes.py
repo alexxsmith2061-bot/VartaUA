@@ -245,7 +245,7 @@ async def _official_directory(kind: str, city_id: int | None = None):
                 if otg_id is None:
                     otg_id = row.get("otgId", row.get("otg_id"))
                 if isinstance(otg_id, str):
-                    match = re.fullmatch(r"(?:/api/pw_otgs/)?(\\d+)", otg_id)
+                    match = re.fullmatch(r"(?:/api/pw_otgs/)?(\d+)", otg_id)
                     otg_id = int(match.group(1)) if match else None
                 if isinstance(otg_id, int) and otg_id > 0:
                     item["otg_id"] = otg_id
