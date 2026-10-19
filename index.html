@@ -607,6 +607,21 @@ const THREAT_NAMES={
 const ALERT_NAMES={air_raid:"Повітряна тривога",artillery_shelling:"Артобстріл",
  urban_fights:"Вуличні бої",chemical:"Хімічна загроза",nuclear:"Радіаційна загроза"};
 
+// Силуети категорій загроз; це умовні позначки області, а не координати цілей.
+function threatSymbolSvg(type){
+ const shapes={
+  drones:'<path d="M16 2 L19 12 L29 18 L29 21 L18 18 L18 26 L22 29 L22 31 L16 29 L10 31 L10 29 L14 26 L14 18 L3 21 L3 18 L13 12 Z"/>',
+  cruise_missiles:'<path d="M16 2 L20 11 L20 18 L29 24 L29 27 L20 24 L19 29 L13 29 L12 24 L3 27 L3 24 L12 18 L12 11 Z"/>',
+  ballistic_missiles:'<path d="M16 2 Q22 8 22 16 L22 25 L18 22 L18 30 L14 30 L14 22 L10 25 L10 16 Q10 8 16 2 Z"/>',
+  unspecified_missiles:'<path d="M16 2 Q22 8 22 16 L22 25 L18 22 L18 30 L14 30 L14 22 L10 25 L10 16 Q10 8 16 2 Z"/>',
+  guided_aerial_bombs:'<path d="M16 2 Q22 9 22 18 L19 25 L19 30 L13 30 L13 25 L10 18 Q10 9 16 2 Z"/><path d="M10 18 L3 24 L3 27 L13 24 M22 18 L29 24 L29 27 L19 24"/>',
+  tactic_aircraft_activity:'<path d="M16 2 L19 12 L30 20 L30 23 L19 19 L19 27 L23 29 L23 31 L16 29 L9 31 L9 29 L13 27 L13 19 L2 23 L2 20 L13 12 Z"/>',
+  strategic_aircraft_activity:'<path d="M16 2 L19 12 L31 18 L31 22 L19 20 L19 27 L24 30 L24 31 L16 29 L8 31 L8 30 L13 27 L13 20 L1 22 L1 18 L13 12 Z"/>',
+  mig31k_departure:'<path d="M16 1 L19 12 L30 21 L30 24 L19 20 L19 27 L24 30 L16 28 L8 30 L13 27 L13 20 L2 24 L2 21 L13 12 Z"/>'
+ };
+ const shape=shapes[type]||shapes.unspecified_missiles;
+ return '<svg viewBox="0 0 32 32" width="25" height="25" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor" stroke="currentColor" stroke-width=".6" stroke-linejoin="round">'+shape+'</g></svg>';
+}
 function renderThreatMarkers(){
  threatMarkers.clearLayers();
  if(!oblastLayer||!cachedThreatRecords.length||!currentStatus?._meta?.fresh)return;
@@ -638,13 +653,13 @@ function renderThreatMarkers(){
   items.slice(0,5).forEach((g,i)=>{
    const angle=i*2.39996,offset=i===0?0:0.21*Math.sqrt(i);
    const point=[pos.lat+Math.sin(angle)*offset,pos.lng+Math.cos(angle)*offset];
-   const symbol=g.type==="drones"?"◆":g.type.includes("aircraft")||g.type==="mig31k_departure"?"✈":"▲";
+   const symbol=threatSymbolSvg(g.type);
    const color=g.level==="red"?"#ff5269":"#ffd15a";
-   const icon=L.divIcon({className:"varta-threat-icon",html:'<span style="display:grid;place-items:center;width:26px;height:26px;border:1px solid '+color+';border-radius:50%;background:#091b2de8;color:'+color+';font-size:17px;font-weight:900;box-shadow:0 0 10px '+color+'66">'+symbol+'</span>',iconSize:[26,26],iconAnchor:[13,13]});
+   const icon=L.divIcon({className:"varta-threat-icon",html:'<span style="display:grid;place-items:center;width:26px;height:26px;border:1px solid '+color+';border-radius:50%;background:#091b2de8;color:'+color+';box-shadow:0 0 10px '+color+'66">'+symbol+'</span>',iconSize:[26,26],iconAnchor:[13,13]});
    const label=THREAT_NAMES[g.type]||g.type;
    const popup=document.createElement("div");
    const strong=document.createElement("strong");strong.textContent=label+" — "+region;popup.appendChild(strong);
-   const note=document.createElement("p");note.textContent="Умовний значок для області, НЕ місце перебування цілі. Кількість та напрямок невідомі.";popup.appendChild(note);
+   const note=document.createElement("p");note.textContent="Силует типу загрози. Позначка розміщена умовно в області, НЕ показує місце перебування цілі. Кількість та напрямок невідомі.";popup.appendChild(note);
    const places=document.createElement("p");places.textContent="Повідомлення: "+Array.from(g.locations).join(", ");popup.appendChild(places);
    L.marker(point,{icon}).bindPopup(popup).addTo(threatMarkers);
   });
