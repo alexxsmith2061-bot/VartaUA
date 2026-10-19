@@ -192,11 +192,8 @@ async def home():
 
 @app.get("/api/build")
 async def build_info():
-    power_paths = sorted(route.path for route in app.routes if route.path.startswith("/api/power/"))
-    return {"app": "VartaUA", "power_router": True,
-            "diagnostics_path": "/api/power/diagnostics",
-            "diagnostics_registered": "/api/power/diagnostics" in power_paths,
-            "power_paths": power_paths, "build_marker": "router-paths-v2"}
+    return {"app": "VartaUA", "build_marker": "safe-build-v3",
+            "power_router_imported": True}
 
 
 @app.get("/api/health")
