@@ -855,3 +855,59 @@ async def power_telegram_today_check(queue: str = "4.2"):
                 "note": "Фільтр за датою публікації. Повідомлення про графік на завтра потребують окремого визначення дати дії; відсутність повідомлень не означає наявності світла"}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося перевірити сьогоднішні повідомлення")
+
+
+@router.get("/api/power/telegram-effective-date-check")
+async def power_telegram_effective_date_check(queue: str = "4.2"):
+    """Check explicit today/tomorrow dates, including posts from yesterday."""
+    from datetime import timedelta
+    if queue not in QUEUES:
+        raise HTTPException(400, "Невідома черга")
+    now = datetime.now(KYIV)
+    today = now.date()
+    tomorrow = today + timedelta(days=1)
+    found = []
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get("https://t.me/s/lviv_bezsvitla",
+                                        headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика сторінка")
+            page = response.text
+        for block in re.split(r'(?=<div[^>]+class="[^"]*tgme_widget_message_wrap)', page):
+            post = re.search(r'data-post="(lviv_bezsvitla/[0-9]+)"', block)
+            stamp = re.search(r'<time[^>]*datetime="([^"]+)"', block)
+            body_match = re.search(r'<div[^>]+class="[^"]*tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+            if not (post and stamp and body_match):
+                continue
+            try:
+                published = datetime.fromisoformat(stamp.group(1).replace("Z", "+00:00")).astimezone(KYIV)
+            except ValueError:
+                continue
+            if published > now or published.date() < today - timedelta(days=2):
+                continue
+            body = html.unescape(re.sub(r'<[^>]+>', " ", body_match.group(1)))
+            if not re.search(r'(?<![0-9])' + re.escape(queue) + r'(?![0-9])', body):
+                continue
+            lower = body.lower()
+            explicit = re.search(r'(?:на\\s+)?(сьогодні|завтра|сьогоднішн(?:ій|ього)|завтрашн(?:ій|ього))', lower)
+            if explicit:
+                target = published.date() + timedelta(days=1 if "завтр" in explicit.group(1) else 0)
+                basis = "relative_text"
+            else:
+                target = None
+                basis = "date_not_established"
+            if target not in (today, tomorrow):
+                continue
+            found.append({"message_url": "https://t.me/" + post.group(1),
+                          "published_at_kyiv": published.isoformat(),
+                          "effective_date": target.isoformat(), "date_basis": basis,
+                          "queue": queue, "schedule_verified": False})
+        return {"now_kyiv": now.isoformat(), "today_kyiv": today.isoformat(),
+                "tomorrow_kyiv": tomorrow.isoformat(), "queue": queue,
+                "messages_with_explicit_effective_date": found,
+                "schedule_verified": False,
+                "note": "Дата визначається тільки за явним текстом сьогодні/завтра. Без вказаної дати графік не підтверджено; це діагностика, не автоматичне застосування."}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося перевірити дату дії Telegram-повідомлень")
