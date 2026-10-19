@@ -61,6 +61,8 @@ last_updated = None
 last_error = None
 data_fresh = False
 last_audit = {}
+last_alert_records = []
+next_poll_seconds = 120
 
 
 def normalize_region(name):
@@ -127,6 +129,8 @@ async def poll_alerts():
     global last_error
     global data_fresh
     global last_audit
+    global last_alert_records
+    global next_poll_seconds
 
     async with httpx.AsyncClient(timeout=15) as client:
         while True:
@@ -151,6 +155,7 @@ async def poll_alerts():
 
                 payload = response.json()
                 parsed = parse_alerts(payload)
+                last_alert_records = [a for a in (payload.get("alerts", []) if isinstance(payload, dict) else payload) if isinstance(a, dict)]
                 entries = payload.get("alerts", []) if isinstance(payload, dict) else payload
                 last_audit = {
                     "source": ALERTS_URL,
@@ -168,7 +173,20 @@ async def poll_alerts():
 
                 last_error = None
                 data_fresh = True
+                next_poll_seconds = 120
 
+            except httpx.HTTPStatusError as error:
+                last_error = str(error)
+                data_fresh = False
+                if error.response.status_code == 429:
+                    retry = error.response.headers.get("Retry-After", "")
+                    try:
+                        next_poll_seconds = min(3600, max(300, int(retry)))
+                    except (ValueError, TypeError):
+                        next_poll_seconds = min(3600, max(300, next_poll_seconds * 2))
+                else:
+                    next_poll_seconds = 120
+                logger.warning("Alerts.in.ua HTTP %s; next attempt in %s seconds", error.response.status_code, next_poll_seconds)
             except Exception as error:
                 last_error = str(error)
                 data_fresh = False
@@ -178,7 +196,7 @@ async def poll_alerts():
                     repr(error),
                 )
 
-            await asyncio.sleep(20)
+            await asyncio.sleep(next_poll_seconds)
 
 
 @app.on_event("startup")
@@ -235,7 +253,8 @@ async def status():
     }
 
     result["_meta"] = {
-        "audit": last_audit if data_fresh else {},
+        "audit": last_audit,
+        "next_poll_seconds": next_poll_seconds,
         "fresh": data_fresh,
         "updated_at": last_updated,
         "alerts_api_configured": bool(ALERTS_TOKEN),
@@ -243,3 +262,11 @@ async def status():
     }
 
     return result
+
+
+@app.get("/api/alerts/details")
+async def alert_details():
+    """Last successful upstream response, including district/community and non-air-raid alerts."""
+    return {"fresh": data_fresh, "updated_at": last_updated,
+            "source": "Alerts.in.ua", "records": last_alert_records,
+            "count": len(last_alert_records), "error": last_error}
