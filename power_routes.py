@@ -646,3 +646,30 @@ async def power_schedule_source_check():
         raise ValueError("Непідтримуваний формат")
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Кандидатне джерело недоступне або повернуло невідомий формат")
+
+
+@router.get("/api/power/svitlo-source-check")
+async def power_svitlo_source_check():
+    """Inspect public page metadata only. Never assume third-party schedule availability."""
+    url = "https://svitlo.day/"
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика сторінка")
+            content_type = response.headers.get("content-type", "")
+            if "html" not in content_type.lower():
+                raise ValueError("Сторінка не HTML")
+            page = response.text
+        scripts = re.findall(r'<script\\b[^>]*\\bsrc\\s*=\\s*["\\']([^"\\']+)["\\']', page, re.I)
+        scripts = [src[:200] for src in scripts if src.startswith("/") or src.startswith("https://svitlo.day/")][:20]
+        return {"available": True, "source": url, "official": False,
+                "html_bytes": len(response.content), "script_count": len(scripts),
+                "script_paths": scripts,
+                "has_next_data": "__NEXT_DATA__" in page,
+                "has_nuxt_data": "__NUXT__" in page,
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "note": "Діагностика відкритої сторінки, не підтвердження наявності графіка"}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося прочитати відкриту сторінку svitlo.day")
