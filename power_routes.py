@@ -380,11 +380,11 @@ async def power_official_news():
     """Recent public posts from the official channel; informational, not an outage schedule."""
     if time.monotonic() - _news_cache["checked"] < 300:
         return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
-                "available": bool(_news_cache["items"]), "error": _news_cache["error"]}
+                "available": bool(_news_cache["items"]), "error": _news_cache["error"], "diagnostic": _news_cache.get("diagnostic")}
     async with _news_lock:
         if time.monotonic() - _news_cache["checked"] < 300:
             return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
-                    "available": bool(_news_cache["items"]), "error": _news_cache["error"]}
+                    "available": bool(_news_cache["items"]), "error": _news_cache["error"], "diagnostic": _news_cache.get("diagnostic")}
         try:
             async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
                 response = await client.get(TELEGRAM_PUBLIC_URL, headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
@@ -412,8 +412,9 @@ async def power_official_news():
             items = sorted({item["id"]: item for item in items}.values(), key=lambda item: item["id"], reverse=True)[:15]
             if not items:
                 raise ValueError("Публічні повідомлення не вдалося прочитати")
-            _news_cache.update(checked=time.monotonic(), items=items, error=None)
+            _news_cache.update(checked=time.monotonic(), items=items, error=None, diagnostic=None)
         except (httpx.HTTPError, ValueError) as exc:
-            _news_cache.update(checked=time.monotonic(), error="Офіційна стрічка тимчасово недоступна")
+            reason = ("http_" + str(exc.response.status_code)) if isinstance(exc, httpx.HTTPStatusError) else type(exc).__name__
+            _news_cache.update(checked=time.monotonic(), error="Не вдалося прочитати публічну стрічку", diagnostic=reason)
         return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
-                "available": bool(_news_cache["items"]), "error": _news_cache["error"]}
+                "available": bool(_news_cache["items"]), "error": _news_cache["error"], "diagnostic": _news_cache.get("diagnostic")}
