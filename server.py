@@ -23,6 +23,7 @@ ALERTS_TOKEN = os.getenv("ALERTS_IN_UA_TOKEN", "").strip()
 ALERTS_URL = "https://api.alerts.in.ua/v1/alerts/active.json"
 
 REGIONS = [
+    "Автономна Республіка Крим",
     "Вінницька область",
     "Волинська область",
     "Дніпропетровська область",
@@ -48,6 +49,7 @@ REGIONS = [
     "Чернівецька область",
     "Чернігівська область",
     "м. Київ",
+    "м. Севастополь",
 ]
 
 status_data = {
@@ -76,39 +78,41 @@ def normalize_region(name):
 
 
 def parse_alerts(payload):
-    result = {
-        region: {"state": "calm"}
-        for region in REGIONS
-    }
-
+    """Aggregate active air-raid alerts without treating district alerts as whole-oblast alerts."""
+    result = {region: {"state": "calm", "scope": "none", "level": None}
+              for region in REGIONS}
     if isinstance(payload, dict):
-        alerts = payload.get("alerts", [])
-
-        if not isinstance(alerts, list):
-            raise ValueError("Невідомий формат відповіді API")
-
+        alerts = payload.get("alerts")
     elif isinstance(payload, list):
         alerts = payload
-
     else:
         raise ValueError("Невідомий формат відповіді API")
+    if not isinstance(alerts, list):
+        raise ValueError("Немає списку alerts")
 
-    for alert in alerts:
-        if not isinstance(alert, dict):
+    for item in alerts:
+        if not isinstance(item, dict):
             continue
-
-        region_name = (
-            alert.get("location_title")
-            or alert.get("region_name")
-            or alert.get("region")
-            or ""
-        )
-
-        region_name = normalize_region(region_name)
-
-        if region_name in result:
-            result[region_name]["state"] = "alert"
-
+        if item.get("alert_type") != "air_raid":
+            continue
+        if item.get("finished_at") is not None:
+            continue
+        location_type = item.get("location_type")
+        oblast = normalize_region(item.get("location_oblast") or "")
+        title = normalize_region(item.get("location_title") or "")
+        region = title if location_type == "oblast" else oblast
+        if region not in result:
+            continue
+        whole = location_type == "oblast" or title in ("м. Київ", "м. Севастополь")
+        previous = result[region]
+        if whole or previous["state"] != "alert":
+            previous["state"] = "alert"
+            previous["scope"] = "oblast" if whole else "partial"
+        if whole:
+            previous["scope"] = "oblast"
+        level = item.get("alert_level")
+        if level in ("red", "yellow") and (previous["level"] != "red" or level == "red"):
+            previous["level"] = level
     return result
 
 
