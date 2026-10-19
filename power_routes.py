@@ -291,6 +291,46 @@ async def power_houses(city_id: int, street_id: int):
         raise HTTPException(503, "Офіційний сервіс будинків не відповідає. Чергу не визначено.")
 
 
+
+@router.get("/api/power/diagnostics")
+async def power_diagnostics():
+    """Public schedule and directory metadata; no personal account records."""
+    results = {}
+    urls = {"schedule": OFFICIAL_URL,
+            "cities": "https://power-api.loe.lviv.ua/api/pw_cities?pagination=false&otg.id="}
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        for name, url in urls.items():
+            try:
+                response = await client.get(url, headers={"Accept": "application/ld+json, application/json"})
+                info = {"status": response.status_code, "content_type": response.headers.get("content-type", "")[:90]}
+                if response.is_success:
+                    payload = response.json()
+                    rows = payload.get("hydra:member", []) if isinstance(payload, dict) else payload
+                    info["count"] = len(rows) if isinstance(rows, list) else None
+                    if name == "schedule" and isinstance(rows, list):
+                        samples = []
+                        for menu in rows[:3]:
+                            if not isinstance(menu, dict):
+                                continue
+                            for item in menu.get("menuItems", [])[:6]:
+                                if not isinstance(item, dict):
+                                    continue
+                                raw = item.get("rawHtml", "")
+                                if not isinstance(raw, str):
+                                    raw = ""
+                                plain = html.unescape(re.sub(r"<[^>]+>", " ", raw))
+                                plain = " ".join(plain.split())
+                                samples.append({"name": str(item.get("name", ""))[:80],
+                                                "html_length": len(raw), "text_preview": plain[:400]})
+                        info["samples"] = samples
+                    elif name == "cities" and isinstance(rows, list) and rows and isinstance(rows[0], dict):
+                        info["fields"] = sorted(rows[0].keys())[:20]
+                results[name] = info
+            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                results[name] = {"error": type(exc).__name__}
+    return {"provider": "Львівобленерго", "results": results}
+
+
 @router.get("/power")
 async def power_page():
     return FileResponse(BASE / "power.html")
