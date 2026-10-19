@@ -627,8 +627,15 @@ async def power_schedule_source_check():
         if isinstance(payload, dict):
             keys = sorted(str(k) for k in payload.keys())[:40]
             shapes = {str(k): type(v).__name__ for k, v in list(payload.items())[:40]}
+            groups = payload.get("groups")
+            group_keys = sorted(str(k) for k in groups.keys())[:100] if isinstance(groups, dict) else []
+            group_types = {str(k): type(v).__name__ for k, v in list(groups.items())[:20]} if isinstance(groups, dict) else {}
             return {"available": True, "candidate_source": url, "official": False,
                     "root_type": "object", "root_keys": keys, "value_types": shapes,
+                    "fetched_at": payload.get("fetched_at") if isinstance(payload.get("fetched_at"), str) else None,
+                    "groups_count": len(groups) if isinstance(groups, dict) else None,
+                    "group_keys": group_keys, "group_value_types": group_types,
+                    "expected_queues_present": sorted(q for q in QUEUES if isinstance(groups, dict) and (q in groups or "GPV" + q in groups)),
                     "checked_at": datetime.now(timezone.utc).isoformat(),
                     "note": "Тільки діагностика формату; графік не використовується без перевірки актуальності"}
         if isinstance(payload, list):
