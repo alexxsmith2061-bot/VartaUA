@@ -186,8 +186,8 @@ h3{color:#dff5ff}
 </div>
 
 <div class="panel">
-<h3>📡 Повідомлення про загрози</h3>
-<p class="muted">Усі активні типи загроз із Alerts.in.ua: області, райони, громади, рівні та час повідомлення. Це не координати повітряних цілей.</p><div id="threatFeed" class="muted" aria-live="polite">Очікуємо дані…</div>
+<h3>📡 Активні загрози · Львівщина та сусіди</h3>
+<p class="muted">Показуємо лише незавершені повідомлення Alerts.in.ua для Львівщини та сусідніх областей. Час у записі — початок тривоги, а не час останнього спостереження. Це не координати цілей.</p><div id="threatFeed" class="muted" aria-live="polite">Очікуємо дані…</div>
 <a href="https://t.me/kpszsu" target="_blank" rel="noopener">Повітряні сили ЗСУ ↗</a>
 </div>
 
@@ -673,13 +673,18 @@ async function updateThreatFeed(){
   if(!response.ok)throw new Error("HTTP "+response.status);
   const details=await response.json();
   if(!details.fresh){feed.textContent="⚠️ Джерело тимчасово недоступне; записи можуть бути застарілими.";return;}
-  const records=(details.records||[]).filter(a=>a&&a.finished_at==null);
-  cachedThreatRecords=records;
+  // Оперативна панель: тільки Львівщина та сусідні області.
+  // started_at — початок тривоги, а не час останнього підтвердження;
+  // не приховуємо тривогу лише тому, що вона почалася давно.
+  const focusRegions=new Set(["Львівська область","Волинська область","Рівненська область","Тернопільська область","Івано-Франківська область","Закарпатська область"]);
+  const allActive=(details.records||[]).filter(a=>a&&a.finished_at==null);
+  const records=allActive.filter(a=>focusRegions.has(normalizeOblastName(a.location_oblast||a.location_title)));
+  cachedThreatRecords=allActive;
   renderThreatMarkers();
-  if(!records.length){feed.textContent="Активних повідомлень у відповіді API немає.";return;}
+  if(!records.length){feed.textContent="Зараз немає активних повідомлень для Львівщини та сусідніх областей.";return;}
   const fragment=document.createDocumentFragment();
   const count=document.createElement("div");
-  count.textContent="Активних записів: "+records.length+" · остання перевірка: "+new Date(details.updated_at).toLocaleTimeString("uk-UA");
+  count.textContent="Активних записів на Заході: "+records.length+" · дані перевірено: "+new Date(details.updated_at).toLocaleTimeString("uk-UA");
   fragment.appendChild(count);
   for(const a of records.slice(0,70)){
    const line=document.createElement("div");
@@ -689,7 +694,7 @@ async function updateThreatFeed(){
    line.textContent=(a.alert_level==="red"?"🔴 ":a.alert_level==="yellow"?"🟡 ":"⚪ ")+
     (ALERT_NAMES[a.alert_type]||a.alert_type||"Загроза")+" — "+place+
     (threats?" | "+threats:"")+
-    (a.started_at?" | "+new Date(a.started_at).toLocaleString("uk-UA"):"")+
+    (a.started_at?" | Початок: "+new Date(a.started_at).toLocaleString("uk-UA"):"")+
     (a.notes?" | "+a.notes:"");
    fragment.appendChild(line);
   }
