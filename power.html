@@ -110,11 +110,13 @@ async function checkOutages(city,street){
   if(!r.ok)throw Error("HTTP "+r.status);
   const data=await r.json();
   if(request!==outageRequest)return;
+  const checked=data.checked_at?new Date(data.checked_at).toLocaleString("uk-UA",{timeZone:"Europe/Kyiv"}):"невідомо";
   $("outage-result").textContent=data.status==="none_found"
    ?"Львівобленерго: зареєстрованих відключень за цією вулицею не знайдено. Це не гарантує наявності світла."
    :data.status==="records_found"
    ?"Львівобленерго: за цією вулицею є записи про відключення ("+data.registered_count+"). Це не підтверджує відключення саме твого будинку."
    :"Немає підтверджених даних про відключення.";
+  $("outage-result").textContent+=" Перевірено: "+checked+".";
  }catch(e){if(request===outageRequest)$("outage-result").textContent="Не вдалося перевірити відключення. Дані тимчасово недоступні."}
 }
 async function initAddresses(){
@@ -162,6 +164,12 @@ $("house").onchange=()=>{
  }else $("address-result").textContent="Будинок "+house+": офіційний API не повернув однозначної черги. Дані не підставляємо.";
 };
 initAddresses();
+function refreshCurrentAddress(){
+ const city=$("city").value,street=$("street").value;
+ if(city&&street)checkOutages(city,street);
+}
+setInterval(refreshCurrentAddress,120000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshCurrentAddress()});
 $("day").onchange=render;$("refresh").onclick=load;buttons();load();setInterval(load,300000);
 </script>
 </body></html>
