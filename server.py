@@ -60,6 +60,7 @@ status_data = {
 last_updated = None
 last_error = None
 data_fresh = False
+last_audit = {}
 
 
 def normalize_region(name):
@@ -111,7 +112,11 @@ def parse_alerts(payload):
         if whole:
             previous["scope"] = "oblast"
         level = item.get("alert_level")
-        if level in ("red", "yellow") and (previous["level"] != "red" or level == "red"):
+        if level not in ("red", "yellow"):
+            level = "unknown"
+        if previous["level"] != "red" and (level == "red" or previous["level"] is None):
+            previous["level"] = level
+        elif previous["level"] == "unknown" and level == "yellow":
             previous["level"] = level
     return result
 
@@ -121,6 +126,7 @@ async def poll_alerts():
     global last_updated
     global last_error
     global data_fresh
+    global last_audit
 
     async with httpx.AsyncClient(timeout=15) as client:
         while True:
@@ -143,8 +149,18 @@ async def poll_alerts():
 
                 response.raise_for_status()
 
-                parsed = parse_alerts(response.json())
-
+                payload = response.json()
+                parsed = parse_alerts(payload)
+                entries = payload.get("alerts", []) if isinstance(payload, dict) else payload
+                last_audit = {
+                    "source": ALERTS_URL,
+                    "received_entries": len(entries),
+                    "received_air_raid": sum(1 for a in entries if isinstance(a, dict) and a.get("alert_type") == "air_raid"),
+                    "mapped_regions": sum(1 for a in parsed.values() if a["state"] == "alert"),
+                    "red": sum(1 for a in parsed.values() if a["state"] == "alert" and a["level"] == "red"),
+                    "yellow": sum(1 for a in parsed.values() if a["state"] == "alert" and a["level"] == "yellow"),
+                    "unknown_level": sum(1 for a in parsed.values() if a["state"] == "alert" and a["level"] not in ("red", "yellow")),
+                }
                 status_data = parsed
                 last_updated = datetime.now(
                     timezone.utc
@@ -219,6 +235,7 @@ async def status():
     }
 
     result["_meta"] = {
+        "audit": last_audit if data_fresh else {},
         "fresh": data_fresh,
         "updated_at": last_updated,
         "alerts_api_configured": bool(ALERTS_TOKEN),
