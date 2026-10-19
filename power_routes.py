@@ -263,6 +263,48 @@ async def power_cities():
 async def power_streets(city_id: int):
     return {"items": await _official_directory("streets", city_id)}
 
+
+@router.get("/api/power/houses")
+async def power_houses(city_id: int, street_id: int):
+    """Official address account search. Only expose public house/queue mapping when explicit."""
+    if city_id < 1 or street_id < 1:
+        raise HTTPException(400, "Некоректна адреса")
+    key = ("houses", city_id, street_id)
+    cached = _directory_cache.get(key)
+    if cached and time.monotonic() - cached[0] < 1800:
+        return cached[1]
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(
+                "https://power-api.loe.lviv.ua/api/pw_accounts",
+                params={"pagination": "false", "city.id": city_id, "street.id": street_id},
+                headers={"Accept": "application/ld+json, application/json"})
+            response.raise_for_status()
+            if len(response.content) > 3_000_000:
+                raise ValueError("Завелика відповідь")
+            payload = response.json()
+        rows = payload.get("hydra:member") if isinstance(payload, dict) else payload
+        if not isinstance(rows, list):
+            raise ValueError("Невідомий формат")
+        houses = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            # Provider schemas vary; never infer a queue from an unrelated numeric field.
+            house = next((row[k] for k in ("house", "houseNumber", "building", "number")
+                          if isinstance(row.get(k), (str, int)) and str(row[k]).strip()), None)
+            queue = next((str(row[k]).strip() for k in ("queue", "gpv", "group", "powerGroup")
+                          if isinstance(row.get(k), (str, int)) and str(row[k]).strip() in QUEUES), None)
+            if house is not None:
+                houses.append({"house": str(house), "queue": queue})
+        result = {"houses": houses, "count": len(rows),
+                  "verified": bool(houses), "source": "Львівобленерго"}
+        _directory_cache[key] = (time.monotonic(), result)
+        return result
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Офіційний сервіс будинків не відповідає. Чергу не визначено.")
+
+
 @router.get("/power")
 async def power_page():
     return FileResponse(BASE / "power.html")
