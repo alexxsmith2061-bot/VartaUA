@@ -227,9 +227,15 @@ async def _official_directory(kind: str, city_id: int | None = None):
             entries = body.get("hydra:member") if isinstance(body, dict) else body
             if not isinstance(entries, list):
                 raise ValueError("Неправильний формат довідника")
-            result = [{"id": row["id"], "name": row["name"]} for row in entries
-                      if isinstance(row, dict) and isinstance(row.get("id"), int)
-                      and isinstance(row.get("name"), str)]
+            result = []
+            for row in entries:
+                if not isinstance(row, dict) or not isinstance(row.get("id"), int) or not isinstance(row.get("name"), str):
+                    continue
+                item = {"id": row["id"], "name": row["name"]}
+                otg = row.get("otg")
+                if isinstance(otg, dict) and isinstance(otg.get("id"), int):
+                    item["otg_id"] = otg["id"]
+                result.append(item)
             if not result:
                 raise ValueError("Довідник порожній")
             _directory_cache[key] = (time.monotonic(), result)
@@ -425,11 +431,25 @@ async def power_outages(city_id: int, street_id: int):
     """Registered outages for the selected street, not a house-level power meter."""
     if city_id < 1 or street_id < 1:
         raise HTTPException(400, "Некоректна адреса")
+    # Resolve OTG from the official city directory, never from user-supplied values.
+    otg_id = None
+    try:
+        cities = await _official_directory("cities")
+        city = next((item for item in cities if item["id"] == city_id), None)
+        if city is None:
+            raise HTTPException(404, "Населений пункт відсутній в офіційному довіднику")
+        otg_id = city.get("otg_id")
+    except HTTPException as exc:
+        if exc.status_code != 503:
+            raise
+        # The provider supports city+street filters without an OTG.
+        pass
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             response = await client.get(
                 "https://power-api.loe.lviv.ua/api/pw_accidents",
-                params={"page": 1, "city.id": city_id, "street.id": street_id},
+                params={"page": 1, "city.id": city_id, "street.id": street_id,
+                        **({"otg.id": otg_id} if otg_id is not None else {})},
                 headers={"Accept": "application/ld+json, application/json"})
             response.raise_for_status()
             if len(response.content) > 1_000_000:
@@ -441,7 +461,10 @@ async def power_outages(city_id: int, street_id: int):
         total = payload.get("hydra:totalItems")
         if not isinstance(members, list) or not isinstance(total, int) or total < 0:
             raise ValueError("Неповна відповідь")
+        # Only publish the field names of records, never raw accident objects or account details.
+        record_fields = sorted(set().union(*(set(item.keys()) for item in members[:5] if isinstance(item, dict))))[:60] if total else []
         return {"available": True, "scope": "street", "registered_count": total,
+                "record_fields": record_fields, "otg_filter_used": otg_id is not None,
                 "status": "none_found" if total == 0 else "records_found",
                 "checked_at": datetime.now(timezone.utc).isoformat(),
                 "source": "Львівобленерго",
