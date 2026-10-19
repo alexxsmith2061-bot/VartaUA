@@ -78,6 +78,13 @@ async function load(){
  }catch(e){source=null;$("day").disabled=true;$("timeline").replaceChildren();$("legend").hidden=true;$("status").textContent="Не вдалося завантажити графік: "+e.message}
 }
 let cities=[],streets=[],houses=[];
+const savedAddress=(()=>{try{return JSON.parse(localStorage.getItem("vartaua_power_address")||"null")}catch{return null}})();
+function saveAddress(){
+ const city=$("city").value,street=$("street").value;
+ if(city&&street)localStorage.setItem("vartaua_power_address",JSON.stringify({
+  city,street,house:$("house").selectedOptions[0]?.textContent||""
+ }));
+}
 function fillOptions(id,items,placeholder){
  const el=$(id), previous=el.value;el.replaceChildren();
  const first=document.createElement("option");first.value="";first.textContent=placeholder;el.append(first);
@@ -122,7 +129,12 @@ async function checkOutages(city,street){
 async function initAddresses(){
  try{
   const r=await fetch("/api/power/cities");if(!r.ok)throw Error("HTTP "+r.status);
-  cities=(await r.json()).items||[];fillOptions("city",cities,"Оберіть населений пункт");filterDirectory("city");
+  cities=(await r.json()).items||[];fillOptions("city",cities,"Оберіть населений пункт");
+  if(savedAddress&&cities.some(x=>String(x.id)===savedAddress.city)){
+   $("city").value=savedAddress.city;
+   $("city-search").value=cities.find(x=>String(x.id)===savedAddress.city).name;
+   $("city").dispatchEvent(new Event("change"));
+  }else filterDirectory("city");
   $("address-status").textContent="Населених пунктів: "+cities.length+". Вибери свій населений пункт.";
  }catch(e){$("address-status").textContent="Офіційний адресний довідник зараз недоступний: "+e.message}
 }
@@ -135,28 +147,38 @@ $("city").onchange=async()=>{
  try{
   const r=await fetch("/api/power/streets?city_id="+encodeURIComponent(id));
   if(!r.ok)throw Error("HTTP "+r.status);
-  streets=(await r.json()).items||[];fillOptions("street",streets,"Оберіть вулицю");filterDirectory("street");
+  if($("city").value!==id)return;
+  streets=(await r.json()).items||[];fillOptions("street",streets,"Оберіть вулицю");
+  if(savedAddress&&savedAddress.city===id&&streets.some(x=>String(x.id)===savedAddress.street)){
+   $("street").value=savedAddress.street;
+   $("street-search").value=streets.find(x=>String(x.id)===savedAddress.street).name;
+   $("street").dispatchEvent(new Event("change"));
+  }else filterDirectory("street");
   $("address-status").textContent="Вулиць у довіднику: "+streets.length+". Почни вводити назву вулиці та вибери підказку.";
  }catch(e){$("address-status").textContent="Не вдалося отримати вулиці: "+e.message}
 };
 $("street").onchange=async()=>{
  const city=$("city").value,street=$("street").value;
- houses=[];checkOutages(city,street);fillOptions("house",[],"Завантаження будинків…");
+ houses=[];if(city&&street)saveAddress();checkOutages(city,street);fillOptions("house",[],"Завантаження будинків…");
  $("address-result").textContent="Перевіряємо адресу у Львівобленерго…";
  if(!city||!street){$("address-result").textContent="Оберіть населений пункт і вулицю.";return}
  try{
   const r=await fetch("/api/power/houses?city_id="+encodeURIComponent(city)+"&street_id="+encodeURIComponent(street));
   if(!r.ok)throw Error("HTTP "+r.status);
-  const data=await r.json();houses=data.houses||[];
+  const data=await r.json();if($("city").value!==city||$("street").value!==street)return;houses=data.houses||[];
   const unique=[...new Set(houses.map(x=>x.house))].sort((a,b)=>a.localeCompare(b,"uk",{numeric:true}));
   fillOptions("house",unique.map((house,i)=>({id:i+1,name:house})),"Оберіть будинок");
+  if(savedAddress&&savedAddress.city===city&&savedAddress.street===street){
+   const index=unique.indexOf(savedAddress.house);
+   if(index>=0){$("house").value=String(index+1);$("house").dispatchEvent(new Event("change"))}
+  }
   $("address-result").textContent=unique.length?"Оберіть номер будинку.":"Офіційний API не повернув розпізнаних номерів будинків. Чергу не визначено.";
  }catch(e){$("address-result").textContent="Офіційний сервіс будинків зараз недоступний. Чергу не визначено ("+e.message+")."}
 };
 $("house").onchange=()=>{
  const index=Number($("house").value)-1;
  const unique=[...new Set(houses.map(x=>x.house))].sort((a,b)=>a.localeCompare(b,"uk",{numeric:true}));
- const house=unique[index];if(!house)return;
+ const house=unique[index];if(!house)return;saveAddress();
  const found=[...new Set(houses.filter(x=>x.house===house&&x.queue).map(x=>x.queue))];
  if(found.length===1){
   selected=found[0];localStorage.setItem("vartaua_queue",selected);buttons();render();
