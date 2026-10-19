@@ -554,8 +554,19 @@ async def power_outage_schema(otg_id: int):
         for field in fields[:70]:
             values = [row.get(field) for row in members[:5] if isinstance(row, dict) and field in row]
             shapes[field] = sorted(set("object" if isinstance(v, dict) else "array" if isinstance(v, list) else "null" if v is None else type(v).__name__ for v in values))
+        # Aggregate codes and format metadata only; never publish raw street/building values.
+        import collections
+        codes = {}
+        for key in ("typeOff", "switchSubReason"):
+            counter = collections.Counter(str(row[key]) for row in members if isinstance(row, dict) and isinstance(row.get(key), int))
+            codes[key] = dict(counter.most_common(15))
+        formats = {}
+        for key in ("dateEvent", "datePlanIn", "buildingNames", "koment"):
+            values = [row.get(key) for row in members if isinstance(row, dict) and isinstance(row.get(key), str)]
+            formats[key] = {"nonempty_in_sample": sum(bool(v.strip()) for v in values),
+                            "max_length": max((len(v) for v in values), default=0)}
         return {"available": True, "otg_id": otg_id, "total_items": total,
-                "sample_size": min(len(members), 5), "field_types": shapes,
+                "sample_size": min(len(members), 5), "field_types": shapes, "sample_codes": codes, "sample_formats": formats,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
                 "note": "Лише структура першої сторінки, без значень записів"}
     except (httpx.HTTPError, ValueError, TypeError):
