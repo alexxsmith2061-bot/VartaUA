@@ -724,3 +724,47 @@ async def power_telegram_source_check():
         }
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Публічне прев'ю Telegram недоступне з сервера")
+
+
+@router.get("/api/power/telegram-changes-check")
+async def power_telegram_changes_check():
+    """Parse public channel messages for queue mentions, without applying schedules."""
+    url = "https://t.me/s/lviv_bezsvitla"
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика сторінка")
+            page = response.text
+        blocks = re.split(r'(?=<div[^>]+class="[^"]*tgme_widget_message_wrap)', page)
+        messages = []
+        for block in blocks:
+            match = re.search(r'data-post="(lviv_bezsvitla/[0-9]+)"', block)
+            if not match:
+                continue
+            body_match = re.search(r'<div[^>]+class="[^"]*tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+            if not body_match:
+                continue
+            body = re.sub(r'<[^>]+>', " ", body_match.group(1))
+            body = html.unescape(body)
+            queues = sorted(set(re.findall(r'(?<![0-9])([1-6][.]?[12])(?![0-9])', body)))
+            normalized = sorted(set(q if "." in q else q[0] + "." + q[1] for q in queues))
+            times = re.findall(r'(?<![0-9])(?:[01]?[0-9]|2[0-3]):[0-5][0-9](?![0-9])', body)
+            date_match = re.search(r'<time[^>]*datetime="([^"]+)"', block)
+            if normalized:
+                messages.append({
+                    "message_url": "https://t.me/" + match.group(1),
+                    "published_at": date_match.group(1) if date_match else None,
+                    "queues": normalized, "times_mentioned": times[:30],
+                    "has_change_words": bool(re.search(r'змін|оновлен|було|стало|новий|старий', body, re.I))
+                })
+        return {
+            "available": True, "source": "https://t.me/lviv_bezsvitla",
+            "official": False, "matched_count": len(messages),
+            "messages": messages[-20:],
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "note": "Черги й години лише згадані в тексті; це НЕ перевірені інтервали графіка і не застосовуються до поточного дня"
+        }
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося прочитати повідомлення Telegram")
