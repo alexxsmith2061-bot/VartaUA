@@ -62,7 +62,7 @@ last_error = None
 data_fresh = False
 last_audit = {}
 last_alert_records = []
-next_poll_seconds = 120
+next_poll_seconds = 360
 
 
 def normalize_region(name):
@@ -181,9 +181,9 @@ async def poll_alerts():
                 if error.response.status_code == 429:
                     retry = error.response.headers.get("Retry-After", "")
                     try:
-                        next_poll_seconds = min(3600, max(300, int(retry)))
+                        next_poll_seconds = min(7200, max(900, int(retry) + 60))
                     except (ValueError, TypeError):
-                        next_poll_seconds = min(3600, max(300, next_poll_seconds * 2))
+                        next_poll_seconds = min(7200, max(900, next_poll_seconds * 2))
                 else:
                     next_poll_seconds = 120
                 logger.warning("Alerts.in.ua HTTP %s; next attempt in %s seconds", error.response.status_code, next_poll_seconds)
