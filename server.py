@@ -310,8 +310,7 @@ async def alert_details():
 async def telegram_alerts():
     """Public, source-attributed recent posts; not object coordinates or official alert states."""
     items = recent_items()
-    items.sort(key=lambda item: (item["published_at"], "Львівська" in item["regions"]), reverse=True)
-    items.sort(key=lambda item: "Львівська" not in item["regions"])
+    items.sort(key=lambda item: item["published_at"], reverse=True)
     return {"sources": ["https://t.me/kpszsu", "https://t.me/war_monitor_ua"],
             "status": telegram_state, "items": items[:80], "count": len(items),
             "notice": "Текстові повідомлення джерел, не підтверджені координати або маршрути цілей."}
