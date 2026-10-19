@@ -19,7 +19,7 @@
 <div id="legend" class="legend" hidden><span><i class="dot yes"></i>Світло є за графіком</span><span><i class="dot no"></i>Відключення</span><span><i class="dot maybe"></i>Можливе відключення</span><span>◩ Півгодинне відключення</span></div>
 <p class="muted" id="updated"></p><div class="actions"><button id="refresh">↻ Оновити дані</button></div>
 </section>
-<section class="panel"><h2>🏠 Як визначити свою чергу?</h2><p class="muted">Визначення черги за адресою поки недоступне: офіційний адресний API повертає помилки. Не вгадуй чергу за сусідніми будинками. Коли знаєш свою чергу, вибери її вище.</p></section>
+<section class="panel"><h2>🏠 Пошук адреси у Львівобленерго</h2><p class="muted">Населені пункти та вулиці завантажуються з офіційного довідника. Автоматичне визначення черги за номером будинку ще не підключене — не підставляємо випадкову чергу.</p><label for="city-search">Пошук населеного пункту</label><input id="city-search" placeholder="Наприклад, Рудно" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="city">Населений пункт</label><select id="city" style="width:100%" disabled><option>Завантаження…</option></select><label for="street-search">Пошук вулиці</label><input id="street-search" placeholder="Наприклад, Богуна" style="width:100%;padding:12px;background:#294561;color:white;border:1px solid #53718d;border-radius:8px"><label for="street">Вулиця</label><select id="street" style="width:100%" disabled><option>Оберіть населений пункт</option></select><p class="muted" id="address-status">Завантажуємо офіційний довідник…</p><p class="muted">Для підтвердження черги конкретного будинку поки користуйся <a href="https://poweron.loe.lviv.ua/shedule-off" target="_blank" rel="noopener noreferrer">офіційним адресним пошуком</a>, після чого обери чергу вище.</p></section>
 <p class="muted">Джерело поточного графіка: <a id="source-link" href="https://poweron.loe.lviv.ua/" target="_blank" rel="noopener noreferrer">перевіряємо…</a>. VartaUA не є офіційним сайтом обленерго.</p>
 </main>
 <script>
@@ -77,6 +77,39 @@ async function load(){
   render();
  }catch(e){source=null;$("day").disabled=true;$("timeline").replaceChildren();$("legend").hidden=true;$("status").textContent="Не вдалося завантажити графік: "+e.message}
 }
+let cities=[],streets=[];
+function fillOptions(id,items,placeholder){
+ const el=$(id), previous=el.value;el.replaceChildren();
+ const first=document.createElement("option");first.value="";first.textContent=placeholder;el.append(first);
+ for(const item of items.slice(0,4000)){const o=document.createElement("option");o.value=String(item.id);o.textContent=item.name;el.append(o)}
+ el.disabled=!items.length;if(items.some(x=>String(x.id)===previous))el.value=previous;
+}
+function filterDirectory(kind){
+ const isCity=kind==="city",query=$(isCity?"city-search":"street-search").value.trim().toLocaleLowerCase("uk");
+ const entries=(isCity?cities:streets).filter(x=>x.name.toLocaleLowerCase("uk").includes(query));
+ fillOptions(isCity?"city":"street",entries,isCity?"Оберіть населений пункт":"Оберіть вулицю");
+}
+async function initAddresses(){
+ try{
+  const r=await fetch("/api/power/cities");if(!r.ok)throw Error("HTTP "+r.status);
+  cities=(await r.json()).items||[];filterDirectory("city");
+  $("address-status").textContent="Населених пунктів: "+cities.length+". Вибери свій населений пункт.";
+ }catch(e){$("address-status").textContent="Офіційний адресний довідник зараз недоступний: "+e.message}
+}
+$("city-search").oninput=()=>filterDirectory("city");
+$("street-search").oninput=()=>filterDirectory("street");
+$("city").onchange=async()=>{
+ const id=$("city").value;streets=[];fillOptions("street",[],"Завантаження…");
+ if(!id)return;
+ $("address-status").textContent="Завантажуємо вулиці…";
+ try{
+  const r=await fetch("/api/power/streets?city_id="+encodeURIComponent(id));
+  if(!r.ok)throw Error("HTTP "+r.status);
+  streets=(await r.json()).items||[];filterDirectory("street");
+  $("address-status").textContent="Вулиць у довіднику: "+streets.length+". Для номера будинку перевір чергу на офіційному сайті.";
+ }catch(e){$("address-status").textContent="Не вдалося отримати вулиці: "+e.message}
+};
+initAddresses();
 $("day").onchange=render;$("refresh").onclick=load;buttons();load();setInterval(load,300000);
 </script>
 </body></html>
