@@ -46,6 +46,32 @@ header{height:auto;min-height:65px}
 .maptools button{padding:8px;font-size:11px}
 .note{font-size:11px;max-width:200px}
 }
+
+/* VartaUA visual refresh: accessible glassy navy surfaces, vivid blue accents. */
+:root{color-scheme:dark;--surface:#14263b;--edge:#2b4965;--blue:#43b9ff;--text:#eff7ff}
+html,body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#091522;color:var(--text)}
+header{background:linear-gradient(110deg,#102c49 0%,#112039 65%,#0d2334 100%);border-bottom:1px solid #305574;box-shadow:0 5px 24px #030b1780}
+.logo{color:#86d7ff;letter-spacing:.2px;text-shadow:0 0 26px #198dff33}
+aside{background:linear-gradient(180deg,#101f31,#0c1a2b);scrollbar-color:#3a6585 transparent}
+.panel{background:linear-gradient(145deg,#1b344c,#13263c);border:1px solid #365673;border-radius:18px;box-shadow:0 9px 26px #050d1c3b;transition:border-color .2s,transform .2s}
+.panel:hover{border-color:#4d7898}
+h3{color:#e3f4ff;letter-spacing:.15px}
+button,select{background:#203b55;border:1px solid #446d8e;border-radius:12px;min-height:42px;transition:background .18s,border-color .18s,transform .18s;outline-offset:3px}
+button:hover{background:#2a5678;border-color:#80c9ff}
+button:active{transform:scale(.985)}
+button.active{background:linear-gradient(125deg,#087cce,#1b9ddd);border-color:#8bd9ff;box-shadow:0 5px 18px #0088ff40}
+.value{color:#78d5ff}
+.status{background:#243c54;border:1px solid #3b5670;border-radius:12px}
+.status.alert{background:#602c3b;border-color:#b85d6e}
+.status.calm{background:#1a503f;border-color:#39896c}
+.status.warn{background:#594529;border-color:#987341}
+#map{background:#12273a}
+.maptools{background:#0d2035e8;border:1px solid #345977;border-radius:14px;box-shadow:0 10px 25px #07101b75;backdrop-filter:blur(12px)}
+.note{background:#10243ce8;border:1px solid #355775;border-radius:13px;backdrop-filter:blur(12px);box-shadow:0 8px 22px #06121e6b}
+a{color:#80d2ff}
+a:hover{color:#c2ebff}
+.leaflet-control-zoom a{background:#18324b!important;color:#e4f6ff!important;border-color:#365b7b!important}
+@media(max-width:760px){header{padding:12px 14px}.panel{border-radius:15px}.note{bottom:18px}}
 </style>
 </head>
 <body>
@@ -151,7 +177,10 @@ let audioContext=null;
 let previousAlert=null;
 let mapMode="street";
 
-const map=L.map("map",{zoomControl:true}).setView(center,8);
+// Geographic guardrails: Ukraine and its immediate border buffer only.
+const UKRAINE_BOUNDS=L.latLngBounds([[43.1,21.0],[53.1,41.5]]);
+const map=L.map("map",{zoomControl:true,minZoom:6,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
+map.whenReady(()=>{map.setMinZoom(Math.max(6,map.getBoundsZoom(UKRAINE_BOUNDS)));});
 
 map.createPane("labelPane");
 map.getPane("labelPane").style.zIndex=350;
@@ -269,6 +298,10 @@ function fitRadius(){
 }
 
 function setCenter(coords,name){
+ if(!UKRAINE_BOUNDS.contains(L.latLng(coords[0],coords[1]))){
+  alert("VartaUA показує територію України. Обери місце в Україні.");
+  return;
+ }
  center=coords;
  circle.setLatLng(center);
  marker.setLatLng(center);
