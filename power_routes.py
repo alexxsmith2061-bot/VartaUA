@@ -418,3 +418,33 @@ async def power_official_news():
             _news_cache.update(checked=time.monotonic(), error="Не вдалося прочитати публічну стрічку", diagnostic=reason)
         return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
                 "available": bool(_news_cache["items"]), "error": _news_cache["error"], "diagnostic": _news_cache.get("diagnostic")}
+
+
+@router.get("/api/power/outages")
+async def power_outages(city_id: int, street_id: int):
+    """Registered outages for the selected street, not a house-level power meter."""
+    if city_id < 1 or street_id < 1:
+        raise HTTPException(400, "Некоректна адреса")
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(
+                "https://power-api.loe.lviv.ua/api/pw_accidents",
+                params={"page": 1, "city.id": city_id, "street.id": street_id},
+                headers={"Accept": "application/ld+json, application/json"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика відповідь")
+            payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("Неправильний формат")
+        members = payload.get("hydra:member")
+        total = payload.get("hydra:totalItems")
+        if not isinstance(members, list) or not isinstance(total, int) or total < 0:
+            raise ValueError("Неповна відповідь")
+        return {"available": True, "scope": "street", "registered_count": total,
+                "status": "none_found" if total == 0 else "records_found",
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "source": "Львівобленерго",
+                "note": "Кількість записів за вулицею; не підтверджує наявність напруги в будинку."}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося перевірити зареєстровані відключення")
