@@ -63,6 +63,8 @@ data_fresh = False
 last_audit = {}
 last_alert_records = []
 next_poll_seconds = 360
+last_modified = None
+last_successful_check = None
 
 
 def normalize_region(name):
@@ -131,6 +133,8 @@ async def poll_alerts():
     global last_audit
     global last_alert_records
     global next_poll_seconds
+    global last_modified
+    global last_successful_check
 
     async with httpx.AsyncClient(timeout=15) as client:
         while True:
@@ -144,14 +148,19 @@ async def poll_alerts():
                 continue
 
             try:
-                response = await client.get(
-                    ALERTS_URL,
-                    headers={
-                        "Authorization": f"Bearer {ALERTS_TOKEN}"
-                    },
-                )
-
+                headers = {"Authorization": f"Bearer {ALERTS_TOKEN}"}
+                if last_modified:
+                    headers["If-Modified-Since"] = last_modified
+                response = await client.get(ALERTS_URL, headers=headers)
                 response.raise_for_status()
+                last_successful_check = datetime.now(timezone.utc).isoformat()
+                if response.status_code == 304:
+                    last_error = None
+                    data_fresh = True
+                    next_poll_seconds = 360
+                    await asyncio.sleep(next_poll_seconds)
+                    continue
+                last_modified = response.headers.get("Last-Modified") or None
 
                 payload = response.json()
                 parsed = parse_alerts(payload)
@@ -173,7 +182,7 @@ async def poll_alerts():
 
                 last_error = None
                 data_fresh = True
-                next_poll_seconds = 120
+                next_poll_seconds = 360
 
             except httpx.HTTPStatusError as error:
                 last_error = str(error)
@@ -181,11 +190,11 @@ async def poll_alerts():
                 if error.response.status_code == 429:
                     retry = error.response.headers.get("Retry-After", "")
                     try:
-                        next_poll_seconds = min(7200, max(900, int(retry) + 60))
+                        next_poll_seconds = max(900, int(retry) + 60)
                     except (ValueError, TypeError):
-                        next_poll_seconds = min(7200, max(900, next_poll_seconds * 2))
+                        next_poll_seconds = max(900, next_poll_seconds * 2)
                 else:
-                    next_poll_seconds = 120
+                    next_poll_seconds = 360
                 logger.warning("Alerts.in.ua HTTP %s; next attempt in %s seconds", error.response.status_code, next_poll_seconds)
             except Exception as error:
                 last_error = str(error)
@@ -242,6 +251,7 @@ async def health():
         "data_fresh": data_fresh,
         "updated_at": last_updated,
         "error": last_error,
+        "last_successful_check": last_successful_check,
     }
 
 
@@ -255,6 +265,7 @@ async def status():
     result["_meta"] = {
         "audit": last_audit,
         "next_poll_seconds": next_poll_seconds,
+        "last_successful_check": last_successful_check,
         "fresh": data_fresh,
         "updated_at": last_updated,
         "alerts_api_configured": bool(ALERTS_TOKEN),
