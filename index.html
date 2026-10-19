@@ -184,7 +184,7 @@ a{color:#80f0ff;font-weight:600}
 <div class="note">
 <strong>VartaUA • Львівщина</strong>
 <div>🔵 Радіус від 5 до 150 км</div>
-<div>🟨 Тривога · Прозоро — без тривоги · ⬜ Немає даних</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
+<div>🟨 Тривога · пунктир — часткова · прозоро — без тривоги</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
 </div>
 </main>
 </div>
@@ -226,9 +226,12 @@ function regionState(name){
 }
 function oblastStyle(feature){
  const state=regionState(featureRegion(feature));
+ const item=currentStatus&&currentStatus[featureRegion(feature)];
+ const partial=item&&item.scope==="partial";
  return {color:state==="alert"?"#ffda70":"#b6c6d4",weight:1.1,opacity:.7,
- fillColor:state==="alert"?"#ffb02e":state==="calm"?"#13bb99":"#8b9db0",
- fillOpacity:state==="alert"?.46:state==="calm"?.035:.12};
+ dashArray:partial?"5 4":null,
+ fillColor:state==="alert"?(partial?"#ffc84a":"#ffb02e"):state==="calm"?"#13bb99":"#8b9db0",
+ fillOpacity:state==="alert"?(partial?.20:.46):state==="calm"?.035:.12};
 }
 function redrawOblasts(){
  if(!oblastLayer)return;
@@ -237,7 +240,7 @@ function redrawOblasts(){
  if(currentStatus)for(const [name,data] of Object.entries(currentStatus))
   if(name!=="_meta"&&(typeof data==="string"?data:data&&data.state)==="alert")active++;
  document.getElementById("oblastSummary").textContent=
-  currentStatus?"🔴 Областей із тривогою: "+active+" · натисни область на карті":"Очікуємо дані про тривоги…";
+  currentStatus?"⚠️ Областей із повною або частковою тривогою: "+active+" · пунктир = часткова":"Очікуємо дані про тривоги…";
 }
 async function loadOblasts(){
  try{
@@ -253,8 +256,9 @@ async function loadOblasts(){
     layer.bindPopup("<strong>"+name.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</strong><div class='oblast-popup-status'>Статус завантажується…</div>");
     layer.on("click",()=>{
      const state=regionState(name);
+     const partial=currentStatus&&currentStatus[name]&&currentStatus[name].scope==="partial";
      const label=currentStatus&&currentStatus._meta&&currentStatus._meta.fresh===true
-      ?state==="alert"?"🔴 Повітряна тривога":state==="calm"?"🟢 Немає обласної тривоги":"⚪ Статус невідомий"
+      ?state==="alert"?(partial?"🟡 Часткова тривога в області":"🔴 Повітряна тривога"):state==="calm"?"🟢 Немає обласної тривоги":"⚪ Статус невідомий"
       :"⚪ Дані тимчасово недоступні";
      layer.setPopupContent("<strong>"+name.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</strong><div>"+label+"</div>");
     });
@@ -270,9 +274,9 @@ async function loadOblasts(){
 }
 
 // Geographic guardrails: Ukraine and its immediate border buffer only.
-const UKRAINE_BOUNDS=L.latLngBounds([[43.1,21.0],[53.1,41.5]]);
+const UKRAINE_BOUNDS=L.latLngBounds([[44.1,22.0],[52.5,40.3]]);
 const map=L.map("map",{zoomControl:true,minZoom:5,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
-map.whenReady(()=>{map.setMinZoom(Math.max(5,map.getBoundsZoom(UKRAINE_BOUNDS)));});
+map.whenReady(()=>{map.setMinZoom(Math.max(5,map.getBoundsZoom(UKRAINE_BOUNDS)));map.panInsideBounds(UKRAINE_BOUNDS,{animate:false});});
 
 map.createPane("labelPane");
 map.getPane("labelPane").style.zIndex=350;
