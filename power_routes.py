@@ -272,17 +272,25 @@ async def power_houses(city_id: int, street_id: int):
         rows = payload.get("hydra:member") if isinstance(payload, dict) else payload
         if not isinstance(rows, list):
             raise ValueError("Невідомий формат")
-        houses = []
+        by_house = {}
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            # Provider schemas vary; never infer a queue from an unrelated numeric field.
-            house = next((row[k] for k in ("house", "houseNumber", "building", "number")
-                          if isinstance(row.get(k), (str, int)) and str(row[k]).strip()), None)
-            queue = next((str(row[k]).strip() for k in ("queue", "gpv", "group", "powerGroup")
-                          if isinstance(row.get(k), (str, int)) and str(row[k]).strip() in QUEUES), None)
-            if house is not None:
-                houses.append({"house": str(house), "queue": queue})
+            house = row.get("buildingName")
+            if not isinstance(house, (str, int)) or not str(house).strip():
+                continue
+            house = str(house).strip()
+            raw_queue = row.get("chergGpv")
+            queue = str(raw_queue).strip() if raw_queue is not None else None
+            if queue not in QUEUES:
+                queue = None
+            by_house.setdefault(house, set()).add(queue)
+        houses = []
+        for house, queues in by_house.items():
+            valid = {q for q in queues if q is not None}
+            # Multiple conflicting or missing values must not produce a guessed queue.
+            resolved = next(iter(valid)) if len(valid) == 1 and None not in queues else None
+            houses.append({"house": house, "queue": resolved})
         result = {"houses": houses, "count": len(rows),
                   "verified": bool(houses), "source": "Львівобленерго"}
         _directory_cache[key] = (time.monotonic(), result)
