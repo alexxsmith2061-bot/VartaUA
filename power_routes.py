@@ -368,3 +368,52 @@ async def schedule():
             "source_label": data["source_label"], "fetched_at": _cache["fetched_at"],
             "stale": stale, "error": _cache["error"],
             "note": "Плановий графік; аварійні відключення можуть відрізнятися."}
+
+
+# Public informational feed. This does not infer outage times from Telegram posts.
+TELEGRAM_PUBLIC_URL = "https://t.me/s/lvivoblenergo"
+_news_cache = {"checked": 0.0, "items": [], "error": None}
+_news_lock = asyncio.Lock()
+
+@router.get("/api/power/news")
+async def power_official_news():
+    """Recent public posts from the official channel; informational, not an outage schedule."""
+    if time.monotonic() - _news_cache["checked"] < 300:
+        return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
+                "available": bool(_news_cache["items"]), "error": _news_cache["error"]}
+    async with _news_lock:
+        if time.monotonic() - _news_cache["checked"] < 300:
+            return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
+                    "available": bool(_news_cache["items"]), "error": _news_cache["error"]}
+        try:
+            async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
+                response = await client.get(TELEGRAM_PUBLIC_URL, headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+                response.raise_for_status()
+                if len(response.content) > 2_000_000:
+                    raise ValueError("Завелика сторінка")
+                page = response.text
+            # Telegram public preview marks each message with data-post="lvivoblenergo/123".
+            blocks = re.split(r'(?=<div[^>]*class="[^"]*tgme_widget_message_wrap)', page)
+            items = []
+            for block in blocks:
+                match = re.search(r'data-post="lvivoblenergo/(\\d+)"', block)
+                if not match:
+                    continue
+                post_id = int(match.group(1))
+                body = re.search(r'<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+                if not body:
+                    continue
+                cleaned = re.sub(r'<br\\s*/?>', '\\n', body.group(1), flags=re.I)
+                cleaned = html.unescape(re.sub(r'<[^>]+>', '', cleaned)).strip()
+                if not cleaned:
+                    continue
+                items.append({"id": post_id, "text": cleaned[:1600],
+                              "url": f"https://t.me/lvivoblenergo/{post_id}"})
+            items = sorted({item["id"]: item for item in items}.values(), key=lambda item: item["id"], reverse=True)[:15]
+            if not items:
+                raise ValueError("Публічні повідомлення не вдалося прочитати")
+            _news_cache.update(checked=time.monotonic(), items=items, error=None)
+        except (httpx.HTTPError, ValueError) as exc:
+            _news_cache.update(checked=time.monotonic(), error="Офіційна стрічка тимчасово недоступна")
+        return {"source": TELEGRAM_PUBLIC_URL, "items": _news_cache["items"],
+                "available": bool(_news_cache["items"]), "error": _news_cache["error"]}
