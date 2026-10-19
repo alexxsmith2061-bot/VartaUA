@@ -688,11 +688,11 @@ async def power_svitlo_api_check():
             script = response.text
         # Only relative, literal API routes. Do not disclose arbitrary URLs or JS contents.
         candidates = set(re.findall(r"""["'](/api/[a-zA-Z0-9_/?=&.{}:-]{1,140})["']""", script))
-        fetch_literals = set(re.findall(r"""fetch\\s*\\(\\s*["'](/[^"' ]{1,140})["']""", script))
+        fetch_literals = set(re.findall(r"""fetch\s*\(\s*["'](/[^"' ]{1,140})["']""", script))
         routes = sorted(candidates | fetch_literals)[:60]
         return {"available": True, "source": "svitlo.day", "official": False,
                 "js_bytes": len(response.content), "relative_routes": routes,
-                "fetch_calls_count": len(re.findall(r"\\bfetch\\s*\\(", script)),
+                "fetch_calls_count": len(re.findall(r"\bfetch\s*\(", script)),
                 "checked_at": datetime.now(timezone.utc).isoformat(),
                 "note": "Лише статичні відносні шляхи; динамічні запити можуть бути не знайдені"}
     except (httpx.HTTPError, ValueError, TypeError):
