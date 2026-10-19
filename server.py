@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from power_routes import router as power_router
+from telegram_monitor import monitor_telegram, recent_items, STATE as telegram_state
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vartaua")
@@ -222,9 +223,8 @@ async def poll_alerts():
 
 @app.on_event("startup")
 async def startup():
-    app.state.alerts_task = asyncio.create_task(
-        poll_alerts()
-    )
+    app.state.alerts_task = asyncio.create_task(poll_alerts())
+    app.state.telegram_task = asyncio.create_task(monitor_telegram())
 
 
 @app.on_event("shutdown")
@@ -235,6 +235,13 @@ async def shutdown():
         None,
     )
 
+    telegram_task = getattr(app.state, "telegram_task", None)
+    if telegram_task:
+        telegram_task.cancel()
+        try:
+            await telegram_task
+        except asyncio.CancelledError:
+            pass
     if task:
         task.cancel()
 
@@ -297,3 +304,14 @@ async def alert_details():
     return {"fresh": data_fresh, "updated_at": last_updated,
             "source": "Alerts.in.ua", "records": last_alert_records,
             "count": len(last_alert_records), "error": last_error}
+
+
+@app.get("/api/telegram/alerts")
+async def telegram_alerts():
+    """Public, source-attributed recent posts; not object coordinates or official alert states."""
+    items = recent_items()
+    items.sort(key=lambda item: (item["published_at"], "Львівська" in item["regions"]), reverse=True)
+    items.sort(key=lambda item: "Львівська" not in item["regions"])
+    return {"sources": ["https://t.me/kpszsu", "https://t.me/war_monitor_ua"],
+            "status": telegram_state, "items": items[:80], "count": len(items),
+            "notice": "Текстові повідомлення джерел, не підтверджені координати або маршрути цілей."}
