@@ -192,7 +192,7 @@ h3{color:#dff5ff}
 </div>
 
 <div class="panel">
-<h3>📨 Оперативні повідомлення · Захід</h3>
+<h3>📨 Нові повідомлення · Львівщина та сусіди</h3>
 <p class="muted">Оригінальні публікації Повітряних сил та war_monitor_ua. Пріоритет: Львівщина і сусідні області. Повідомлення не означають підтверджених координат цілей.</p>
 <div id="telegramFeed" class="muted">Підключення джерел…</div>
 </div>
@@ -213,7 +213,7 @@ h3{color:#dff5ff}
 <div class="note">
 <strong>VartaUA • Львівщина</strong>
 <div>🔵 Радіус від 5 до 150 км</div>
-<div>🟥 Червона · 🟨 Жовта · пунктир — часткова</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
+<div>🟥 Червона · 🟨 Жовта · пунктир — часткова</div><div>✈️ Значки — тип загрози в області, НЕ координати цілей</div><div>Це карта тривог, а не карта фронту чи всіх бойових подій.</div>
 </div>
 </main>
 </div>
@@ -235,6 +235,7 @@ let nationalOutline=null;
 let threatMarkers=L.layerGroup();
 let cachedThreatRecords=[];
 let currentStatus=null;
+const FOCUS_REGIONS=new Set(["Львівська область","Волинська область","Рівненська область","Тернопільська область","Івано-Франківська область","Закарпатська область"]);
 const GEO_SOURCE="https://cdn.jsdelivr.net/gh/darmat1/ukraine-geo-data@main/geodata/Ukraine.geojson";
 function normalizeOblastName(value){
  const v=String(value||"").toLowerCase().replace(/['’]/g,"").replace(/[^а-щьюяєіїґa-z ]/gi,"").trim();
@@ -579,7 +580,7 @@ async function updateStatus(){
    :(region.state||region.status||"unk");
 
   if(meta.fresh!==true){
-   currentStatus=null;redrawOblasts();
+   currentStatus=null;cachedThreatRecords=[];threatMarkers.clearLayers();redrawOblasts();
    document.getElementById("threatFeed").textContent="⚠️ Дані застарілі; повідомлення не підтверджені зараз.";
    setAlert("⚠️ Немає актуальних даних про тривоги","warn");
    document.getElementById("connection").textContent="⚠️ API недоступний";
@@ -696,13 +697,13 @@ async function updateThreatFeed(){
   const response=await fetch("/api/alerts/details",{cache:"no-store"});
   if(!response.ok)throw new Error("HTTP "+response.status);
   const details=await response.json();
-  if(!details.fresh){feed.textContent="⚠️ Джерело тимчасово недоступне; записи можуть бути застарілими.";return;}
+  if(!details.fresh){cachedThreatRecords=[];threatMarkers.clearLayers();feed.textContent="⚠️ Дані недоступні; попередні повідомлення приховано.";return;}
   // Оперативна панель: тільки Львівщина та сусідні області.
   // started_at — початок тривоги, а не час останнього підтвердження;
   // не приховуємо тривогу лише тому, що вона почалася давно.
-  const focusRegions=new Set(["Львівська область","Волинська область","Рівненська область","Тернопільська область","Івано-Франківська область","Закарпатська область"]);
   const allActive=(details.records||[]).filter(a=>a&&a.finished_at==null);
-  const records=allActive.filter(a=>focusRegions.has(normalizeOblastName(a.location_oblast||a.location_title)));
+  const records=allActive.filter(a=>FOCUS_REGIONS.has(normalizeOblastName(a.location_oblast||a.location_title)))
+   .sort((a,b)=>Date.parse(b.started_at||0)-Date.parse(a.started_at||0));
   cachedThreatRecords=allActive;
   renderThreatMarkers();
   if(!records.length){feed.textContent="Зараз немає активних повідомлень для Львівщини та сусідніх областей.";return;}
@@ -733,11 +734,11 @@ async function updateTelegramFeed(){
   if(!response.ok)throw Error("HTTP "+response.status);
   const data=await response.json();
   if(!data.status?.connected){
-   target.textContent="Telegram-моніторинг ще не підключено. Налаштуйте серверні облікові дані; статус: "+(data.status?.error||"очікування");
+   target.textContent="⚠️ Telegram зараз недоступний. Старі повідомлення приховано. "+(data.status?.error||"очікування");
    return;
   }
-  const items=data.items||[];
-  if(!items.length){target.textContent="Немає нових повідомлень за останні 6 годин щодо Львівщини та сусідніх областей.";return;}
+  const items=(data.items||[]).filter(item=>Array.isArray(item.regions)&&item.regions.some(r=>FOCUS_REGIONS.has(normalizeOblastName(r))));
+  if(!items.length){target.textContent="Немає нових повідомлень за останні 90 хвилин щодо Львівщини та сусідніх областей.";return;}
   const fragment=document.createDocumentFragment();
   for(const item of items.slice(0,35)){
    const block=document.createElement("div");
