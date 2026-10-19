@@ -75,15 +75,18 @@ def parse_official(payload):
         raise ValueError("Неправильний список офіційних графіків")
     days = {}
     updated_by_day = {}
+    diagnostics = {"menus": len(menus), "items": 0, "html_items": 0, "dated_items": 0, "parsed_groups": 0}
     for menu in menus:
         if not isinstance(menu, dict):
             continue
         for item in menu.get("menuItems", []):
+            diagnostics["items"] += 1
             if not isinstance(item, dict):
                 continue
             raw = item.get("rawHtml", "")
             if not isinstance(raw, str) or len(raw) > 250000:
                 continue
+            diagnostics["html_items"] += 1
             paragraphs = [
                 html.unescape(re.sub(r"<[^>]*>", "", x)).strip()
                 for x in re.findall(r"<p\b[^>]*>(.*?)</p>", raw, re.I | re.S)
@@ -105,6 +108,7 @@ def parse_official(payload):
                 stamp = datetime.strptime(stamp_match.group(2) + " " + stamp_match.group(1), "%d.%m.%Y %H:%M").replace(tzinfo=KYIV)
             except ValueError:
                 continue
+            diagnostics["dated_items"] += 1
             groups = {}
             for p in paragraphs[2:]:
                 m = re.search(r"Група\s+(\d+\.\d+)\.\s*(.*)", p, re.I)
@@ -140,11 +144,12 @@ def parse_official(payload):
                         states = {( "yes", "yes"): "yes", ("no", "no"): "no",
                                   ("no", "yes"): "first", ("yes", "no"): "second"}
                         groups[queue] = [states[(halfhours[i], halfhours[i + 1])] for i in range(0, 48, 2)]
+            diagnostics["parsed_groups"] += len(groups)
             if groups and (day not in updated_by_day or stamp > updated_by_day[day]):
                 days[day] = groups
                 updated_by_day[day] = stamp
     if not days:
-        raise ValueError("Офіційний API не повернув розпізнаного графіка")
+        raise ValueError("Немає розпізнаних графіків в офіційній відповіді (" + ", ".join(f"{k}={v}" for k, v in diagnostics.items()) + ")")
     latest = max(updated_by_day.values())
     return {"days": days, "source_updated": latest.astimezone(timezone.utc).isoformat(),
             "source_label": "Львівобленерго", "source": "https://poweron.loe.lviv.ua/",
