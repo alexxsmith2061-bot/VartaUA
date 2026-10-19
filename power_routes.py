@@ -526,3 +526,37 @@ async def power_outages(city_id: int, street_id: int):
                 "note": "Кількість записів за вулицею; не підтверджує наявність напруги в будинку."}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося перевірити зареєстровані відключення")
+
+
+@router.get("/api/power/outage-schema")
+async def power_outage_schema(otg_id: int):
+    """One bounded official query per request; disclose schema only, never accident records."""
+    if otg_id < 1:
+        raise HTTPException(400, "Некоректний код громади")
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(
+                "https://power-api.loe.lviv.ua/api/pw_accidents",
+                params={"page": 1, "otg.id": otg_id},
+                headers={"Accept": "application/ld+json, application/json"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика відповідь")
+            payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("Невідомий формат")
+        members = payload.get("hydra:member")
+        total = payload.get("hydra:totalItems")
+        if not isinstance(members, list) or not isinstance(total, int):
+            raise ValueError("Неповна відповідь")
+        fields = sorted(set().union(*(set(row.keys()) for row in members[:5] if isinstance(row, dict)))) if members else []
+        shapes = {}
+        for field in fields[:70]:
+            values = [row.get(field) for row in members[:5] if isinstance(row, dict) and field in row]
+            shapes[field] = sorted(set("object" if isinstance(v, dict) else "array" if isinstance(v, list) else "null" if v is None else type(v).__name__ for v in values))
+        return {"available": True, "otg_id": otg_id, "total_items": total,
+                "sample_size": min(len(members), 5), "field_types": shapes,
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "note": "Лише структура першої сторінки, без значень записів"}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося отримати структуру відключень")
