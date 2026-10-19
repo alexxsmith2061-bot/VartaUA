@@ -6,6 +6,26 @@
 <style>
 :root{color-scheme:dark;font-family:system-ui,Arial,sans-serif;background:#101722;color:#edf4ff}
 *{box-sizing:border-box}body{margin:0}header{background:#1c2b3e;padding:22px max(16px,calc((100% - 1000px)/2));border-bottom:1px solid #39516b}h1{font-size:25px;margin:0 0 12px;color:#81c8ff}a{color:#91ccff}main{max-width:1000px;margin:auto;padding:20px}.panel{background:#1d2d41;border:1px solid #39516b;border-radius:15px;padding:20px;margin-bottom:16px}h2{margin-top:0;font-size:20px}.muted{color:#b1c4d8;font-size:14px;line-height:1.6}.queue-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}button{background:#294561;color:#fff;border:1px solid #53718d;border-radius:9px;padding:13px;font-size:16px;cursor:pointer}button.active{background:#167ec3;border-color:#a0d9ff}.status{padding:13px;background:#293d53;border-radius:9px;line-height:1.6}.warning{background:#4c3e2b;border:1px solid #8c6d43;border-radius:10px;padding:14px;line-height:1.6}.timeline{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;margin-top:18px}.slot{min-height:58px;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-align:center;gap:3px}.yes{background:#215b43}.no{background:#8b3038}.maybe{background:#796024}.first,.second{background:linear-gradient(90deg,#8b3038 50%,#215b43 50%)}.second{background:linear-gradient(90deg,#215b43 50%,#8b3038 50%)}.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:15px;font-size:13px}.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px}.actions{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap}select{background:#294561;color:white;padding:10px;border:1px solid #53718d;border-radius:8px}label{display:block;margin:15px 0 6px}@media(max-width:700px){main{padding:12px}.panel{padding:15px}.queue-grid{grid-template-columns:repeat(3,1fr)}.timeline{grid-template-columns:repeat(6,minmax(0,1fr))}.slot{min-height:52px;font-size:11px}}
+
+/* VartaUA shared visual language */
+:root{color-scheme:dark;background:#091522;color:#eff7ff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:radial-gradient(ellipse at 80% 0%,#183d5b 0%,transparent 45%),#091522}
+header{background:linear-gradient(110deg,#102c49,#101e32);border-bottom:1px solid #355c7a;box-shadow:0 6px 28px #030b1760}
+h1{color:#8ad9ff;letter-spacing:.2px}
+main{max-width:1040px}
+.panel{background:linear-gradient(140deg,#1b344c,#12263b);border:1px solid #365875;border-radius:18px;box-shadow:0 12px 30px #020a183d}
+.panel h2{color:#e5f5ff}
+.warning{background:#594429;border:1px solid #a48048;border-radius:14px}
+.status{background:#243d56;border:1px solid #3a5874;border-radius:12px}
+button,select,input{border-radius:11px!important}
+button{background:#214662;border:1px solid #4a789a;transition:background .2s,transform .2s}
+button:hover{background:#2a6288}
+button:active{transform:scale(.985)}
+button.active{background:linear-gradient(130deg,#087cc9,#1ca5df);border-color:#91dcff;box-shadow:0 5px 16px #008bff30}
+select{background:#1d3c55;border-color:#416c8a}
+a{color:#86d6ff}a:hover{color:#c4efff}
+.slot{border-radius:9px;min-height:62px}
+@media(max-width:700px){.panel{border-radius:15px}.slot{min-height:54px}}
 </style>
 </head>
 <body>
