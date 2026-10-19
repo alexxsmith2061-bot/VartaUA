@@ -768,3 +768,45 @@ async def power_telegram_changes_check():
         }
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося прочитати повідомлення Telegram")
+
+
+@router.get("/api/power/telegram-queue-check")
+async def power_telegram_queue_check(queue: str = "4.2"):
+    """Inspect queue-specific message sections, without claiming a live schedule."""
+    if queue not in QUEUES:
+        raise HTTPException(400, "Невідома черга")
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get("https://t.me/s/lviv_bezsvitla",
+                                        headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завелика сторінка")
+            page = response.text
+        blocks = re.split(r'(?=<div[^>]+class="[^"]*tgme_widget_message_wrap)', page)
+        found = []
+        for block in blocks:
+            post = re.search(r'data-post="(lviv_bezsvitla/[0-9]+)"', block)
+            body_match = re.search(r'<div[^>]+class="[^"]*tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', block, re.S)
+            if not post or not body_match:
+                continue
+            body_html = re.sub(r'<br\\s*/?>', "\\n", body_match.group(1), flags=re.I)
+            body_html = re.sub(r'</(?:p|div)>', "\\n", body_html, flags=re.I)
+            body = html.unescape(re.sub(r'<[^>]+>', " ", body_html))
+            pattern = r'(?<![0-9])' + re.escape(queue) + r'(?![0-9])'
+            matches = list(re.finditer(pattern, body))
+            if not matches:
+                continue
+            date_match = re.search(r'<time[^>]*datetime="([^"]+)"', block)
+            # Short surrounding text is diagnostic evidence, NOT a parsed schedule.
+            snippets = [body[max(0, m.start()-100):min(len(body), m.end()+260)].strip() for m in matches[:5]]
+            found.append({"message_url": "https://t.me/" + post.group(1),
+                          "published_at": date_match.group(1) if date_match else None,
+                          "queue": queue, "mentions": len(matches),
+                          "context_samples": snippets})
+        return {"source": "https://t.me/lviv_bezsvitla", "official": False,
+                "queue": queue, "messages": found[-20:],
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "note": "Фрагменти тексту для перевірки формату, не підтверджений графік"}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося перевірити повідомлення каналу")
