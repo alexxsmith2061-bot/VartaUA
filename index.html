@@ -347,8 +347,8 @@ async function loadOblasts(){
 
 // Geographic guardrails: Ukraine and its immediate border buffer only.
 const UKRAINE_BOUNDS=L.latLngBounds([[44.1,22.0],[52.5,40.3]]);
-const map=L.map("map",{zoomControl:true,minZoom:5,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
-map.whenReady(()=>{map.setMinZoom(Math.max(5,map.getBoundsZoom(UKRAINE_BOUNDS)));map.panInsideBounds(UKRAINE_BOUNDS,{animate:false});});
+const map=L.map("map",{zoomControl:true,zoomSnap:0.25,zoomDelta:0.5,minZoom:5,maxZoom:18,maxBounds:UKRAINE_BOUNDS,maxBoundsViscosity:1,worldCopyJump:false}).setView(center,8);
+map.whenReady(()=>{map.setMinZoom(Math.max(5,map.getBoundsZoom(UKRAINE_BOUNDS)-0.5));});
 
 // Затемнення сусідніх держав над областями та під українським контуром.
 map.createPane("outsideUkrainePane");
@@ -504,7 +504,7 @@ document.getElementById("radius").oninput=e=>{
 };
 
 document.getElementById("fit").onclick=fitRadius;
-document.getElementById("wholeUkraine").onclick=()=>map.fitBounds([[44.3,22.2],[52.3,40.3]],{padding:[15,15]});
+document.getElementById("wholeUkraine").onclick=()=>map.fitBounds([[44.35,22.1],[52.4,40.25]],{padding:[0,0],animate:true});
 
 document.getElementById("locate").onclick=()=>{
  if(!navigator.geolocation){
@@ -754,7 +754,12 @@ async function updateTelegramFeed(){
   target.replaceChildren(fragment);
  }catch(err){target.textContent="Помилка завантаження повідомлень: "+err.message;}
 }
-map.fitBounds([[44.3,22.2],[52.3,40.3]],{padding:[15,15]});
+// На старті Україна більша: дозволяємо трохи обрізати краї кадру,
+ // кнопка «Україна» повертає повний огляд усіх кордонів.
+map.whenReady(()=>{
+ map.fitBounds([[44.35,22.1],[52.4,40.25]],{padding:[0,0],animate:false});
+ map.setZoom(Math.min(map.getMaxZoom(),map.getZoom()+0.5),{animate:false});
+});
 loadOblasts();
 updateStatus();
 updateTelegramFeed();
