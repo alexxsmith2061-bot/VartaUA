@@ -206,6 +206,63 @@ async def load_data():
         except (httpx.HTTPError, ValueError) as exc:
             _cache["error"] = str(exc)
 
+
+# Official address directory, fetched server-side because the provider restricts browser CORS.
+_directory_cache = {}
+_directory_lock = asyncio.Lock()
+
+async def _official_directory(kind: str, city_id: int | None = None):
+    if kind not in ("cities", "streets"):
+        raise HTTPException(400, "Невідомий довідник")
+    if kind == "streets" and (city_id is None or city_id < 1):
+        raise HTTPException(400, "Потрібен код населеного пункту")
+    key = (kind, city_id)
+    now = time.monotonic()
+    cached = _directory_cache.get(key)
+    if cached and now - cached[0] < 86400:
+        return cached[1]
+    async with _directory_lock:
+        cached = _directory_cache.get(key)
+        if cached and time.monotonic() - cached[0] < 86400:
+            return cached[1]
+        url = "https://power-api.loe.lviv.ua/api/pw_" + kind
+        params = {"pagination": "false"}
+        if kind == "cities":
+            params["otg.id"] = ""
+        else:
+            params["city.id"] = str(city_id)
+        try:
+            async with httpx.AsyncClient(timeout=20) as client:
+                response = await client.get(url, params=params, headers={"Accept": "application/ld+json, application/json"})
+                response.raise_for_status()
+                if len(response.content) > 3_000_000:
+                    raise ValueError("Завеликий довідник")
+                body = response.json()
+            entries = body.get("hydra:member") if isinstance(body, dict) else body
+            if not isinstance(entries, list):
+                raise ValueError("Неправильний формат довідника")
+            result = [{"id": row["id"], "name": row["name"]} for row in entries
+                      if isinstance(row, dict) and isinstance(row.get("id"), int)
+                      and isinstance(row.get("name"), str)]
+            if not result:
+                raise ValueError("Довідник порожній")
+            _directory_cache[key] = (time.monotonic(), result)
+            return result
+        except (httpx.HTTPError, ValueError, TypeError, KeyError):
+            if cached:
+                return cached[1]
+            raise HTTPException(503, "Офіційний адресний довідник тимчасово недоступний")
+
+
+@router.get("/api/power/cities")
+async def power_cities():
+    return {"items": await _official_directory("cities")}
+
+
+@router.get("/api/power/streets")
+async def power_streets(city_id: int):
+    return {"items": await _official_directory("streets", city_id)}
+
 @router.get("/power")
 async def power_page():
     return FileResponse(BASE / "power.html")
