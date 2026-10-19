@@ -566,6 +566,28 @@ async def power_outage_schema(otg_id: int):
             values = [row.get(key) for row in sample if isinstance(row.get(key), str)]
             formats[key] = {"nonempty_in_sample": sum(bool(v.strip()) for v in values),
                             "max_length": max((len(v) for v in values), default=0)}
+        # Diagnose whether the field contains numbers, masked placeholders, or free text.
+        # Return only aggregate counts; never reveal address strings.
+        building_summary = {"sampled": 0, "empty": 0, "contains_ascii_digits": 0,
+                            "contains_unicode_digits": 0, "comma_separated": 0,
+                            "single_token": 0, "only_punctuation_or_spaces": 0}
+        for row in sample:
+            value = row.get("buildingNames")
+            if not isinstance(value, str):
+                continue
+            building_summary["sampled"] += 1
+            if not value.strip():
+                building_summary["empty"] += 1
+            if any("0" <= ch <= "9" for ch in value):
+                building_summary["contains_ascii_digits"] += 1
+            if any(ch.isdigit() for ch in value):
+                building_summary["contains_unicode_digits"] += 1
+            if "," in value:
+                building_summary["comma_separated"] += 1
+            if len(value.split()) == 1:
+                building_summary["single_token"] += 1
+            if not any(ch.isalnum() for ch in value):
+                building_summary["only_punctuation_or_spaces"] += 1
         address_formats = []
         for row in sample:
             value = row.get("buildingNames")
@@ -584,7 +606,7 @@ async def power_outage_schema(otg_id: int):
                 "approx_semicolon_parts": min(value.count(";") + 1, 100),
             })
         return {"available": True, "otg_id": otg_id, "total_items": total,
-                "sample_size": len(sample), "page_items": len(members), "field_types": shapes, "sample_codes": codes, "sample_formats": formats, "building_format_samples": address_formats,
+                "sample_size": len(sample), "page_items": len(members), "field_types": shapes, "sample_codes": codes, "sample_formats": formats, "building_format_samples": address_formats, "building_summary": building_summary,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
                 "note": "Лише структура першої сторінки, без значень записів"}
     except (httpx.HTTPError, ValueError, TypeError):
