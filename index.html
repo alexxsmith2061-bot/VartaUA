@@ -184,7 +184,7 @@ a{color:#80f0ff;font-weight:600}
 <div class="note">
 <strong>VartaUA • Львівщина</strong>
 <div>🔵 Радіус від 5 до 150 км</div>
-<div>🟨 Тривога · пунктир — часткова · прозоро — без тривоги</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
+<div>🟥 Червона · 🟨 Жовта · пунктир — часткова</div><div>✈️ Позначки цілей: лише за перевіреними даними</div>
 </div>
 </main>
 </div>
@@ -228,10 +228,13 @@ function oblastStyle(feature){
  const state=regionState(featureRegion(feature));
  const item=currentStatus&&currentStatus[featureRegion(feature)];
  const partial=item&&item.scope==="partial";
- return {color:state==="alert"?"#ffda70":"#b6c6d4",weight:1.1,opacity:.7,
+ const level=item&&item.level;
+ const red=state==="alert"&&level==="red";
+ const yellow=state==="alert"&&level==="yellow";
+ return {color:red?"#ff8c91":yellow?"#ffda70":"#b6c6d4",weight:1.2,opacity:.85,
  dashArray:partial?"5 4":null,
- fillColor:state==="alert"?(partial?"#ffc84a":"#ffb02e"):state==="calm"?"#13bb99":"#8b9db0",
- fillOpacity:state==="alert"?(partial?.20:.46):state==="calm"?.035:.12};
+ fillColor:red?"#ed4357":yellow?"#ffb02e":state==="alert"?"#8792a6":"#8b9db0",
+ fillOpacity:state==="alert"?(partial?.29:.47):state==="calm"?.025:.10};
 }
 function redrawOblasts(){
  if(!oblastLayer)return;
@@ -240,7 +243,7 @@ function redrawOblasts(){
  if(currentStatus)for(const [name,data] of Object.entries(currentStatus))
   if(name!=="_meta"&&(typeof data==="string"?data:data&&data.state)==="alert")active++;
  document.getElementById("oblastSummary").textContent=
-  currentStatus?"⚠️ Областей із повною або частковою тривогою: "+active+" · пунктир = часткова":"Очікуємо дані про тривоги…";
+  currentStatus?"⚠️ Активні області: "+active+" · 🔴 "+(currentStatus._meta?.audit?.red??"?")+" · 🟡 "+(currentStatus._meta?.audit?.yellow??"?"):"Очікуємо дані про тривоги…";
 }
 async function loadOblasts(){
  try{
@@ -256,9 +259,11 @@ async function loadOblasts(){
     layer.bindPopup("<strong>"+name.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</strong><div class='oblast-popup-status'>Статус завантажується…</div>");
     layer.on("click",()=>{
      const state=regionState(name);
-     const partial=currentStatus&&currentStatus[name]&&currentStatus[name].scope==="partial";
+     const item=currentStatus&&currentStatus[name];
+     const partial=item&&item.scope==="partial";
+     const level=item&&item.level;
      const label=currentStatus&&currentStatus._meta&&currentStatus._meta.fresh===true
-      ?state==="alert"?(partial?"🟡 Часткова тривога в області":"🔴 Повітряна тривога"):state==="calm"?"🟢 Немає обласної тривоги":"⚪ Статус невідомий"
+      ?state==="alert"?(level==="red"?"🔴 Червоний рівень":level==="yellow"?"🟡 Жовтий рівень":"⚪ Рівень не вказано")+(partial?" · часткова":""):state==="calm"?"🟢 Немає обласної тривоги":"⚪ Статус невідомий"
       :"⚪ Дані тимчасово недоступні";
      layer.setPopupContent("<strong>"+name.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</strong><div>"+label+"</div>");
     });
