@@ -673,3 +673,27 @@ async def power_svitlo_source_check():
                 "note": "Діагностика відкритої сторінки, не підтвердження наявності графіка"}
     except (httpx.HTTPError, ValueError, TypeError):
         raise HTTPException(503, "Не вдалося прочитати відкриту сторінку svitlo.day")
+
+
+@router.get("/api/power/svitlo-api-check")
+async def power_svitlo_api_check():
+    """Inspect public JS for API route literals; never return source code or secrets."""
+    url = "https://svitlo.day/app.js?v=67f8cf68"
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; VartaUA/1.0)"})
+            response.raise_for_status()
+            if len(response.content) > 1_000_000:
+                raise ValueError("Завеликий JavaScript")
+            script = response.text
+        # Only relative, literal API routes. Do not disclose arbitrary URLs or JS contents.
+        candidates = set(re.findall(r"""["'](/api/[a-zA-Z0-9_/?=&.{}:-]{1,140})["']""", script))
+        fetch_literals = set(re.findall(r"""fetch\\s*\\(\\s*["'](/[^"' ]{1,140})["']""", script))
+        routes = sorted(candidates | fetch_literals)[:60]
+        return {"available": True, "source": "svitlo.day", "official": False,
+                "js_bytes": len(response.content), "relative_routes": routes,
+                "fetch_calls_count": len(re.findall(r"\\bfetch\\s*\\(", script)),
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "note": "Лише статичні відносні шляхи; динамічні запити можуть бути не знайдені"}
+    except (httpx.HTTPError, ValueError, TypeError):
+        raise HTTPException(503, "Не вдалося перевірити відкритий JavaScript")
